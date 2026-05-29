@@ -81,3 +81,48 @@ export const KNOCKOUT_ROUNDS: KnockoutRound[] = [
     ],
   },
 ];
+
+// ─── Bracket tree (ordered for face-to-face display) ────────────────────────
+
+function findMatch(id: number): KnockoutMatch {
+  for (const round of KNOCKOUT_ROUNDS) {
+    const m = round.matches.find((m) => m.id === id);
+    if (m) return m;
+  }
+  throw new Error(`Match ${id} not found`);
+}
+
+export type BracketHalf = {
+  r32: KnockoutMatch[]; // 8 matches, top-to-bottom in bracket order
+  r16: KnockoutMatch[]; // 4 matches
+  qf:  KnockoutMatch[]; // 2 matches
+  sf:  KnockoutMatch;
+};
+
+export const BRACKET: {
+  left:   BracketHalf;
+  final:  KnockoutMatch;
+  right:  BracketHalf;
+  bronze: KnockoutMatch;
+} = {
+  left: {
+    // R32 pairs: [74,77]→R16-89  [73,75]→R16-90  [83,84]→R16-93  [81,82]→R16-94
+    r32: [74, 77, 73, 75, 83, 84, 81, 82].map(findMatch),
+    // R16 pairs: [89,90]→QF-97  [93,94]→QF-98
+    r16: [89, 90, 93, 94].map(findMatch),
+    // QF pair: [97,98]→SF-101
+    qf:  [97, 98].map(findMatch),
+    sf:  findMatch(101),
+  },
+  final: findMatch(104),
+  right: {
+    sf:  findMatch(102),
+    // QF pair: [99,100]←SF-102
+    qf:  [99, 100].map(findMatch),
+    // R16 pairs: [91,92]←QF-99  [95,96]←QF-100
+    r16: [91, 92, 95, 96].map(findMatch),
+    // R32 pairs: [76,78]←R16-91  [79,80]←R16-92  [86,88]←R16-95  [85,87]←R16-96
+    r32: [76, 78, 79, 80, 86, 88, 85, 87].map(findMatch),
+  },
+  bronze: findMatch(103),
+};
