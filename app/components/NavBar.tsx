@@ -5,14 +5,15 @@ import WalletLink from "@/app/components/WalletLink";
 type Props = {
   userId: string;
   walletAddress: string | null;
-  activePath: "/" | "/leaderboard" | "/groups" | "/profile";
+  activePath: "/" | "/leaderboard" | "/groups" | "/knockout" | "/profile";
   avatarUrl?: string | null;
   username?: string | null;
 };
 
 export default function NavBar({ userId, walletAddress, activePath, avatarUrl, username }: Props) {
   const links = [
-    { href: "/groups",      label: "Groups" },
+    { href: "/groups",    label: "Groups" },
+    { href: "/knockout",  label: "Knockout" },
     { href: "/leaderboard", label: "Leaderboard" },
   ] as const;
 
