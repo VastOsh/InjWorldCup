@@ -12,6 +12,16 @@ export async function savePrediction(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  const { data: match } = await supabase
+    .from("matches")
+    .select("match_date")
+    .eq("id", matchId)
+    .single();
+
+  if (!match || new Date(match.match_date).getTime() <= Date.now()) {
+    return { error: "Predictions are locked for this match." };
+  }
+
   const { error } = await supabase
     .from("predictions")
     .upsert(

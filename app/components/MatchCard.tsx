@@ -53,6 +53,19 @@ function StatusBadge({ status, locked }: { status: Match["status"]; locked: bool
   );
 }
 
+function MultiplierBadge({ value, label }: { value: number; label?: string }) {
+  const flat = Number(value) === 1.0;
+  return (
+    <span className={`inline-flex items-center font-mono text-[10px] font-bold px-1.5 py-0.5 border ${
+      flat
+        ? "border-ink-faint text-ink-muted"
+        : "border-ink bg-ink text-parchment shadow-brutal-sm"
+    }`}>
+      ×{Number(value).toFixed(2)}{label && <span className="ml-0.5 opacity-60">{label}</span>}
+    </span>
+  );
+}
+
 function ScoreInput({
   value,
   onChange,
@@ -120,7 +133,7 @@ export default function MatchCard({
   const kickoffIso = match.match_date.replace(' ', 'T').replace(/\+(\d{2})$/, '+$1:00');
   const kickoffDate = new Date(kickoffIso);
   const kickoffLabel = Number.isFinite(kickoffDate.getTime())
-    ? kickoffDate.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+    ? kickoffDate.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short" })
     : match.match_date;
 
   const isFinished = match.status === "FINISHED";
@@ -162,23 +175,23 @@ export default function MatchCard({
 
         {/* Teams + multipliers */}
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5 items-start">
             <div className="flex items-center gap-2">
               <TeamFlag name={match.team_home} />
               <p className="font-bold text-sm leading-tight tracking-tight">{match.team_home}</p>
             </div>
-            <p className="font-mono text-[11px] text-ink-muted">×{Number(match.multiplier_home).toFixed(2)}</p>
+            <MultiplierBadge value={match.multiplier_home} />
           </div>
-          <div className="flex flex-col items-center gap-0.5 px-1">
+          <div className="flex flex-col items-center gap-1 px-1">
             <span className="font-mono text-xs text-ink-faint tracking-widest">VS</span>
-            <span className="font-mono text-[10px] text-ink-muted">×{Number(match.multiplier_draw).toFixed(2)} D</span>
+            <MultiplierBadge value={match.multiplier_draw} label="D" />
           </div>
-          <div className="flex flex-col gap-1 items-end">
+          <div className="flex flex-col gap-1.5 items-end">
             <div className="flex items-center gap-2">
               <p className="font-bold text-sm leading-tight tracking-tight">{match.team_away}</p>
               <TeamFlag name={match.team_away} />
             </div>
-            <p className="font-mono text-[11px] text-ink-muted">×{Number(match.multiplier_away).toFixed(2)}</p>
+            <MultiplierBadge value={match.multiplier_away} />
           </div>
         </div>
 

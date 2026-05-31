@@ -79,7 +79,7 @@ export default function LoginPage() {
         transition={{ delay: 0.5, duration: 0.4 }}
         className="absolute bottom-8 text-xs text-white/20 font-mono tracking-widest"
       >
-        POWERED BY INJECTIVE
+        Created by S!G
       </motion.p>
     </main>
   );

@@ -64,6 +64,7 @@ export type Database = {
           multiplier_draw?: number;
           multiplier_away?: number;
           match_date: string;
+          group_name?: string | null;
         };
         Update: {
           team_home?: string;
@@ -75,6 +76,7 @@ export type Database = {
           multiplier_draw?: number;
           multiplier_away?: number;
           match_date?: string;
+          group_name?: string | null;
         };
         Relationships: [];
       };
@@ -88,6 +90,12 @@ export type Database = {
         Row: { key: string; value_int: number | null };
         Insert: { key: string; value_int?: number | null };
         Update: { value_int?: number | null };
+        Relationships: [];
+      };
+      api_request_log: {
+        Row: { date: string; count: number };
+        Insert: { date?: string; count?: number };
+        Update: { count?: number };
         Relationships: [];
       };
       predictions: {
