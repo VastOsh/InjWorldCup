@@ -88,7 +88,8 @@ export default function KnockoutBracket() {
   //   SF winners → right → Final
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="overflow-x-auto">
+    <div className="flex flex-col gap-6 min-w-max">
 
       {/* Column labels */}
       <div className="flex">
@@ -160,6 +161,7 @@ export default function KnockoutBracket() {
         </div>
       </div>
 
+    </div>
     </div>
   );
 }

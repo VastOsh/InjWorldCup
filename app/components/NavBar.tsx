@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import WalletLink from "@/app/components/WalletLink";
+import MobileNav from "@/app/components/MobileNav";
 
 type Props = {
   userId: string;
@@ -28,7 +29,14 @@ export default function NavBar({ userId, walletAddress, activePath, avatarUrl, u
           INJ<span className="text-accent">WC</span>
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <MobileNav
+          userId={userId}
+          walletAddress={walletAddress}
+          activePath={activePath}
+          username={username}
+        />
+
+        <nav className="hidden sm:flex items-center gap-2">
           {links.map(({ href, label }) => (
             <Link
               key={href}
