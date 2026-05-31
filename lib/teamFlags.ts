@@ -59,6 +59,7 @@ const TEAM_FLAGS: Record<string, string> = {
   // Asia / Oceania
   "Japan":         "jp",
   "South Korea":   "kr",
+  "North Korea":   "kp",
   "Australia":     "au",
   "Iran":          "ir",
   "Saudi Arabia":  "sa",
