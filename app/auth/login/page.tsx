@@ -1,6 +1,22 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+
+function ErrorBanner() {
+  const params = useSearchParams();
+  if (!params.get("error")) return null;
+  return (
+    <motion.p
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="text-xs font-mono text-red-400 bg-red-900/30 border border-red-500/40 px-4 py-2 rounded"
+    >
+      Sign-in failed. Please try again or use a different browser.
+    </motion.p>
+  );
+}
 
 export default function LoginPage() {
   return (
@@ -22,6 +38,8 @@ export default function LoginPage() {
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         className="relative z-10 flex flex-col items-center gap-10 text-center"
       >
+        <Suspense fallback={null}><ErrorBanner /></Suspense>
+
         {/* Eyebrow */}
         <motion.p
           initial={{ opacity: 0 }}

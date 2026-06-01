@@ -11,10 +11,16 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  let exchangeError = false;
+  try {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) exchangeError = true;
+  } catch {
+    exchangeError = true;
+  }
 
-  if (error) {
-    return NextResponse.redirect(new URL("/?error=exchange_failed", request.url));
+  if (exchangeError) {
+    return NextResponse.redirect(new URL("/auth/login?error=signin_failed", request.url));
   }
 
   // Successful auth — send to home (middleware handles the session from here)

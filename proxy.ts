@@ -25,16 +25,8 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
-  const isAuthRoute = pathname.startsWith("/auth");
-
-  if (!user && !isAuthRoute) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/auth/login";
-    return NextResponse.redirect(loginUrl);
-  }
+  // Refresh session — must use getUser(), not getSession()
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
