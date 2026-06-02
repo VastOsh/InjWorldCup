@@ -11,7 +11,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, avatar_url, total_points, wallet_address, country")
+    .select("username, avatar_url, total_points, wallet_address")
     .eq("id", user.id)
     .single();
 
@@ -28,7 +28,6 @@ export default async function ProfilePage() {
 
         <ProfileForm
           currentUsername={profile?.username ?? ""}
-          currentCountry={profile?.country ?? null}
           avatarUrl={profile?.avatar_url ?? null}
           totalPoints={profile?.total_points ?? 0}
         />
