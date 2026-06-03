@@ -52,6 +52,7 @@ export type Database = {
           multiplier_away: number;
           match_date: string;
           group_name: string | null;
+          visible: boolean;
         };
         Insert: {
           id: number;
@@ -65,6 +66,7 @@ export type Database = {
           multiplier_away?: number;
           match_date: string;
           group_name?: string | null;
+          visible?: boolean;
         };
         Update: {
           team_home?: string;
@@ -77,6 +79,7 @@ export type Database = {
           multiplier_away?: number;
           match_date?: string;
           group_name?: string | null;
+          visible?: boolean;
         };
         Relationships: [];
       };
