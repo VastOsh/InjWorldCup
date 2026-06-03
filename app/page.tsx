@@ -26,7 +26,7 @@ export default async function HomePage() {
       .select("username, avatar_url, total_points, wallet_address, tie_breaker_answer")
       .eq("id", user.id)
       .single(),
-    supabase.from("matches").select("*").order("match_date", { ascending: true }),
+    supabase.from("matches").select("*").eq("visible", true).order("match_date", { ascending: true }),
     supabase.from("predictions").select("*").eq("user_id", user.id),
     supabase.from("app_config").select("value_int").eq("key", "tiebreaker_visible").maybeSingle(),
   ]);
