@@ -4,6 +4,7 @@ import Image from "next/image";
 import NavBar from "@/app/components/NavBar";
 import TiebreakerInput from "@/app/components/TiebreakerInput";
 import MatchGrid from "@/app/components/MatchGrid";
+import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
 import type { Database } from "@/lib/supabase/types";
 
 type Match = Database["public"]["Tables"]["matches"]["Row"];
@@ -15,21 +16,28 @@ export default async function HomePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username, avatar_url, total_points, wallet_address, tie_breaker_answer, country")
+    .eq("id", user.id)
+    .single();
+
   const [
-    { data: profile },
     { data: matches },
     { data: predictions },
     { data: tbConfig },
+    { count: aboveCount },
   ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("username, avatar_url, total_points, wallet_address, tie_breaker_answer")
-      .eq("id", user.id)
-      .single(),
     supabase.from("matches").select("*").eq("visible", true).order("match_date", { ascending: true }),
     supabase.from("predictions").select("*").eq("user_id", user.id),
     supabase.from("app_config").select("value_int").eq("key", "tiebreaker_visible").maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .gt("total_points", profile?.total_points ?? 0),
   ]);
+
+  const userRank = (aboveCount ?? 0) + 1;
 
   const predByMatchId = Object.fromEntries((predictions ?? []).map((p) => [p.match_id, p]));
   const tiebreakerVisible = (tbConfig?.value_int ?? 0) === 1;
@@ -75,7 +83,23 @@ export default async function HomePage() {
             />
           )}
           <div className="flex-1 min-w-0">
-            <p className="font-black text-lg tracking-tight truncate">{profile?.username}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-black text-lg tracking-tight truncate">{profile?.username}</p>
+              {profile?.country && (() => {
+                const c = COUNTRIES.find(x => x.name === profile.country);
+                return c ? (
+                  <Image
+                    src={flagUrlByCode(c.code)}
+                    alt={c.name}
+                    width={20}
+                    height={14}
+                    className="border border-ink-faint flex-shrink-0"
+                    title={c.name}
+                  />
+                ) : null;
+              })()}
+              <span className="font-mono font-black text-lg text-ink-muted">#{userRank}</span>
+            </div>
             <p className="font-mono text-sm text-ink-muted tabular">
               {(profile?.total_points ?? 0).toLocaleString()} pts
             </p>
