@@ -167,7 +167,7 @@ export default function MatchCard({
       {/* Header bar */}
       <div className="flex items-center justify-between border-b-2 border-ink px-4 py-2 bg-parchment">
         <StatusBadge status={match.status} locked={locked} />
-        <span className="font-mono text-[11px] text-ink-muted tabular">{kickoffLabel}</span>
+        <span className="font-mono text-[11px] text-ink-muted tabular" suppressHydrationWarning>{kickoffLabel}</span>
       </div>
 
       {/* Match body */}
