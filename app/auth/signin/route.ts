@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import type { NextRequest } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient();
+  const origin = new URL(request.url).origin;
 
   let oauthUrl: string | null = null;
   try {
@@ -10,7 +12,7 @@ export async function GET() {
       provider: "discord",
       options: {
         scopes: "identify",
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "")}/auth/callback`,
+        redirectTo: `${origin}/auth/callback`,
       },
     });
     if (!error && data.url) oauthUrl = data.url;
