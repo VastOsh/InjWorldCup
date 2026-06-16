@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
+import PlayerDrawer from "./PlayerDrawer";
 
 type Player = {
   id: string;
@@ -77,9 +78,18 @@ export default function Leaderboard({
   const [tab, setTab] = useState<"players" | "countries">("players");
   const [expandedCountry, setExpandedCountry] = useState<string | null>(null);
   const [players, setPlayers] = useState(() => sortPlayers(initialPlayers, tiebreakerActual));
+  const [selectedPlayer, setSelectedPlayer] = useState<{ id: string; rank: number | null } | null>(null);
   const prevPointsRef = useRef<Map<string, number>>(new Map(initialPlayers.map(p => [p.id, p.total_points])));
 
   const myCountry = initialPlayers.find(p => p.id === currentUserId)?.country ?? null;
+
+  const openPlayer = useCallback((id: string, rank: number | null) => {
+    setSelectedPlayer({ id, rank });
+  }, []);
+
+  const closePlayer = useCallback(() => {
+    setSelectedPlayer(null);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -154,7 +164,8 @@ export default function Leaderboard({
                       layout: { type: "spring", stiffness: 320, damping: 32 },
                       opacity: { duration: 0.2 },
                     }}
-                    className={`flex items-center gap-3 px-4 py-3 border-b-2 border-ink last:border-b-0 ${
+                    onClick={() => openPlayer(player.id, idx)}
+                    className={`flex items-center gap-3 px-4 py-3 border-b-2 border-ink last:border-b-0 cursor-pointer hover:brightness-95 active:brightness-90 transition-[filter] ${
                       isMe ? "bg-accent-soft" : idx % 2 === 0 ? "bg-surface" : "bg-parchment"
                     }`}
                   >
@@ -301,7 +312,8 @@ export default function Leaderboard({
                           return (
                             <li
                               key={p.id}
-                              className={`flex items-center gap-3 pl-14 pr-4 py-2 border-b border-ink-faint last:border-b-0 ${
+                              onClick={() => openPlayer(p.id, null)}
+                              className={`flex items-center gap-3 pl-14 pr-4 py-2 border-b border-ink-faint last:border-b-0 cursor-pointer hover:brightness-95 active:brightness-90 transition-[filter] ${
                                 isMe ? "bg-accent-soft" : "bg-ink-faint/30"
                               }`}
                             >
@@ -346,6 +358,12 @@ export default function Leaderboard({
           </motion.ol>
         )}
       </AnimatePresence>
+
+      <PlayerDrawer
+        playerId={selectedPlayer?.id ?? null}
+        rank={selectedPlayer?.rank ?? null}
+        onClose={closePlayer}
+      />
     </div>
   );
 }
