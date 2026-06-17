@@ -130,11 +130,16 @@ export default function MatchCard({
     });
   };
 
-  const kickoffIso = match.match_date.replace(' ', 'T').replace(/\+(\d{2})$/, '+$1:00');
-  const kickoffDate = new Date(kickoffIso);
-  const kickoffLabel = Number.isFinite(kickoffDate.getTime())
-    ? kickoffDate.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short" })
-    : match.match_date;
+  const [kickoffLabel, setKickoffLabel] = useState('');
+  useEffect(() => {
+    const iso = match.match_date.replace(' ', 'T').replace(/\+(\d{2})$/, '+$1:00');
+    const d = new Date(iso);
+    setKickoffLabel(
+      Number.isFinite(d.getTime())
+        ? d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short" })
+        : match.match_date
+    );
+  }, [match.match_date]);
 
   const isFinished = match.status === "FINISHED";
 
@@ -167,7 +172,7 @@ export default function MatchCard({
       {/* Header bar */}
       <div className="flex items-center justify-between border-b-2 border-ink px-4 py-2 bg-parchment">
         <StatusBadge status={match.status} locked={locked} />
-        <span className="font-mono text-[11px] text-ink-muted tabular" suppressHydrationWarning>{kickoffLabel}</span>
+        <span className="font-mono text-[11px] text-ink-muted tabular">{kickoffLabel}</span>
       </div>
 
       {/* Match body */}
