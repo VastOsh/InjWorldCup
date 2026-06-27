@@ -4,6 +4,8 @@ import Image from "next/image";
 import NavBar from "@/app/components/NavBar";
 import TiebreakerInput from "@/app/components/TiebreakerInput";
 import MatchGrid from "@/app/components/MatchGrid";
+import GroupAccordion from "@/app/components/GroupAccordion";
+import { KNOCKOUT_ROUNDS } from "@/lib/rounds";
 import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
 import type { Database } from "@/lib/supabase/types";
 
@@ -63,6 +65,22 @@ export default async function HomePage() {
 
   const groupEntries = [...groupMap.entries()].sort(([a], [b]) => a.localeCompare(b));
 
+  // Knockout matches split by round (rendered in tournament order); anything
+  // without a round falls back to a generic "Other Matches" section.
+  const roundMap = new Map<string, Match[]>();
+  const otherMatches: Match[] = [];
+  for (const match of ungrouped) {
+    if (match.round) {
+      if (!roundMap.has(match.round)) roundMap.set(match.round, []);
+      roundMap.get(match.round)!.push(match);
+    } else {
+      otherMatches.push(match);
+    }
+  }
+  const roundSections = KNOCKOUT_ROUNDS
+    .filter((r) => roundMap.has(r.code))
+    .map((r) => ({ label: r.label, matches: roundMap.get(r.code)! }));
+
   return (
     <main className="min-h-screen bg-parchment">
 
@@ -118,30 +136,42 @@ export default async function HomePage() {
           </p>
         )}
 
-        {/* ── Group-stage sections ──────────────────────────────────────── */}
-        {groupEntries.map(([groupName, groupMatches]) => (
-          <section key={groupName}>
+        {/* ── Group-stage sections (collapsible) ────────────────────────── */}
+        {groupEntries.length > 0 && (
+          <GroupAccordion
+            groups={groupEntries.map(([groupName, groupMatches]) => ({
+              groupName,
+              matches: groupMatches,
+            }))}
+            predByMatchId={predByMatchId as Record<number, Prediction>}
+            lockedIds={lockedIds}
+          />
+        )}
+
+        {/* ── Knockout rounds (each round in its own labelled section) ───── */}
+        {roundSections.map(({ label, matches: roundMatches }) => (
+          <section key={label}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="bg-ink px-3 py-1">
-                <span className="font-black text-xs tracking-[0.2em] uppercase text-parchment">
-                  Group {groupName}
+              <div className="border-2 border-ink px-3 py-1">
+                <span className="font-black text-xs tracking-[0.2em] uppercase text-ink">
+                  {label}
                 </span>
               </div>
               <div className="flex-1 h-px bg-ink-faint" />
               <span className="font-mono text-[11px] text-ink-muted">
-                {groupMatches.length} match{groupMatches.length !== 1 ? "es" : ""}
+                {roundMatches.length} match{roundMatches.length !== 1 ? "es" : ""}
               </span>
             </div>
             <MatchGrid
-              matches={groupMatches}
+              matches={roundMatches}
               predByMatchId={predByMatchId as Record<number, Prediction>}
               lockedIds={lockedIds}
             />
           </section>
         ))}
 
-        {/* ── Ungrouped matches (knockouts / friendlies) ────────────────── */}
-        {ungrouped.length > 0 && (
+        {/* ── Anything still unclassified (friendlies / no round) ────────── */}
+        {otherMatches.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-4">
               <div className="border-2 border-ink px-3 py-1">
@@ -152,7 +182,7 @@ export default async function HomePage() {
               <div className="flex-1 h-px bg-ink-faint" />
             </div>
             <MatchGrid
-              matches={ungrouped}
+              matches={otherMatches}
               predByMatchId={predByMatchId as Record<number, Prediction>}
               lockedIds={lockedIds}
             />
