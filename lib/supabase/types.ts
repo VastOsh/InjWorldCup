@@ -53,6 +53,7 @@ export type Database = {
           match_date: string;
           group_name: string | null;
           visible: boolean;
+          round: string | null;
         };
         Insert: {
           id: number;
@@ -67,6 +68,7 @@ export type Database = {
           match_date: string;
           group_name?: string | null;
           visible?: boolean;
+          round?: string | null;
         };
         Update: {
           team_home?: string;
@@ -80,6 +82,7 @@ export type Database = {
           match_date?: string;
           group_name?: string | null;
           visible?: boolean;
+          round?: string | null;
         };
         Relationships: [];
       };
