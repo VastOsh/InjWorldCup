@@ -4,6 +4,7 @@ import Image from "next/image";
 import NavBar from "@/app/components/NavBar";
 import TiebreakerInput from "@/app/components/TiebreakerInput";
 import MatchGrid from "@/app/components/MatchGrid";
+import GroupAccordion from "@/app/components/GroupAccordion";
 import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
 import type { Database } from "@/lib/supabase/types";
 
@@ -118,27 +119,17 @@ export default async function HomePage() {
           </p>
         )}
 
-        {/* ── Group-stage sections ──────────────────────────────────────── */}
-        {groupEntries.map(([groupName, groupMatches]) => (
-          <section key={groupName}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-ink px-3 py-1">
-                <span className="font-black text-xs tracking-[0.2em] uppercase text-parchment">
-                  Group {groupName}
-                </span>
-              </div>
-              <div className="flex-1 h-px bg-ink-faint" />
-              <span className="font-mono text-[11px] text-ink-muted">
-                {groupMatches.length} match{groupMatches.length !== 1 ? "es" : ""}
-              </span>
-            </div>
-            <MatchGrid
-              matches={groupMatches}
-              predByMatchId={predByMatchId as Record<number, Prediction>}
-              lockedIds={lockedIds}
-            />
-          </section>
-        ))}
+        {/* ── Group-stage sections (collapsible) ────────────────────────── */}
+        {groupEntries.length > 0 && (
+          <GroupAccordion
+            groups={groupEntries.map(([groupName, groupMatches]) => ({
+              groupName,
+              matches: groupMatches,
+            }))}
+            predByMatchId={predByMatchId as Record<number, Prediction>}
+            lockedIds={lockedIds}
+          />
+        )}
 
         {/* ── Ungrouped matches (knockouts / friendlies) ────────────────── */}
         {ungrouped.length > 0 && (
