@@ -99,8 +99,13 @@ export default function MatchCard({
   prediction: Prediction;
   initialLocked: boolean;
 }) {
+  const isKnockout = match.round !== null;
+
   const [predHome, setPredHome] = useState(prediction?.pred_home ?? 0);
   const [predAway, setPredAway] = useState(prediction?.pred_away ?? 0);
+  const [predAdvance, setPredAdvance] = useState<"home" | "away" | null>(
+    prediction?.pred_advance ?? null,
+  );
   const [saved, setSaved] = useState(!!prediction);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -123,8 +128,12 @@ export default function MatchCard({
 
   const handleSave = () => {
     setError(null);
+    if (isKnockout && predAdvance === null) {
+      setError("Pick which team advances.");
+      return;
+    }
     startTransition(async () => {
-      const result = await savePrediction(match.id, predHome, predAway);
+      const result = await savePrediction(match.id, predHome, predAway, predAdvance);
       if (result.error) setError(result.error);
       else setSaved(true);
     });
@@ -142,6 +151,19 @@ export default function MatchCard({
   }, [match.match_date]);
 
   const isFinished = match.status === "FINISHED";
+
+  // Knockout tiebreaker display helpers.
+  const advanceName =
+    match.advance_winner === "home" ? match.team_home
+    : match.advance_winner === "away" ? match.team_away
+    : null;
+  const wasLevel =
+    match.score_home !== null && match.score_home === match.score_away;
+  const hasPens = match.pen_home !== null && match.pen_away !== null;
+  // The advance pick only earns points on a level result; only judge it then.
+  const advanceCorrect =
+    isKnockout && wasLevel && prediction?.pred_advance != null &&
+    prediction.pred_advance === match.advance_winner;
 
   // What outcome does the current prediction imply?
   let outcomeLabel = "";
@@ -210,6 +232,18 @@ export default function MatchCard({
               <span className="font-mono text-3xl font-black text-ink tabular">{match.score_away}</span>
             </div>
 
+            {/* Knockout: who advanced (+ penalty shootout score if any) */}
+            {isKnockout && advanceName && (
+              <p className="text-center font-mono text-[11px] tracking-wide text-ink-muted uppercase">
+                ➜ {advanceName} advance
+                {hasPens && wasLevel && (
+                  <span className="ml-1 text-ink-faint">
+                    ({match.pen_home}–{match.pen_away} pens)
+                  </span>
+                )}
+              </p>
+            )}
+
             {/* User's prediction outcome */}
             {prediction && (
               <div className="border-t-2 border-ink-faint pt-3 flex items-center justify-between">
@@ -226,6 +260,13 @@ export default function MatchCard({
                   {correctOutcome && (
                     <span className="font-mono text-[10px] tracking-widest uppercase border border-open text-open px-1.5 py-0.5">
                       Correct
+                    </span>
+                  )}
+                  {isKnockout && wasLevel && prediction.pred_advance != null && (
+                    <span className={`font-mono text-[10px] tracking-widest uppercase px-1.5 py-0.5 ${
+                      advanceCorrect ? "bg-open text-white" : "border border-ink-muted text-ink-muted"
+                    }`}>
+                      {advanceCorrect ? "Advance ✓" : "Advance ✗"}
                     </span>
                   )}
                 </div>
@@ -257,6 +298,37 @@ export default function MatchCard({
                 </div>
               </div>
 
+              {/* Knockout: who advances if it goes to extra time / penalties */}
+              {isKnockout && (
+                <div className="flex flex-col gap-1.5 border-t-2 border-ink-faint pt-3">
+                  <span className="text-center font-mono text-[10px] tracking-widest uppercase text-ink-muted">
+                    If level, who advances?
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["home", "away"] as const).map((side) => {
+                      const selected = predAdvance === side;
+                      const name = side === "home" ? match.team_home : match.team_away;
+                      return (
+                        <button
+                          key={side}
+                          type="button"
+                          disabled={locked || isPending}
+                          onClick={() => { setPredAdvance(side); setSaved(false); }}
+                          className={`flex items-center justify-center gap-1.5 border-2 py-1.5 px-1 text-[11px] font-bold tracking-wide uppercase transition-colors disabled:cursor-not-allowed ${
+                            selected
+                              ? "border-ink bg-ink text-parchment shadow-brutal-sm"
+                              : "border-ink-faint text-ink-muted hover:border-ink disabled:hover:border-ink-faint"
+                          }`}
+                        >
+                          <TeamFlag name={name} />
+                          <span className="truncate">{name.split(" ")[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Outcome label */}
               {!locked && (
                 <motion.p
@@ -273,7 +345,7 @@ export default function MatchCard({
               {!locked && (
                 <motion.button
                   onClick={handleSave}
-                  disabled={isPending || saved}
+                  disabled={isPending || saved || (isKnockout && predAdvance === null)}
                   whileTap={!isPending && !saved ? { x: 2, y: 2, boxShadow: "0px 0px 0px #0D0D0D" } : {}}
                   className="w-full border-2 border-ink bg-ink text-parchment py-2.5 text-xs font-bold tracking-widest uppercase shadow-brutal-sm transition-colors hover:bg-accent hover:border-accent disabled:bg-ink-faint disabled:border-ink-faint disabled:text-white disabled:shadow-none disabled:cursor-not-allowed"
                 >

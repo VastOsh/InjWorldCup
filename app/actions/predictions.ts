@@ -7,6 +7,7 @@ export async function savePrediction(
   matchId: number,
   predHome: number,
   predAway: number,
+  predAdvance: "home" | "away" | null = null,
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -14,7 +15,7 @@ export async function savePrediction(
 
   const { data: match } = await supabase
     .from("matches")
-    .select("match_date")
+    .select("match_date, round")
     .eq("id", matchId)
     .single();
 
@@ -22,10 +23,23 @@ export async function savePrediction(
     return { error: "Predictions are locked for this match." };
   }
 
+  // The advance pick only applies to knockout matches; ignore it otherwise so a
+  // stale client value can never land on a group-stage row.
+  const isKnockout = match.round !== null;
+  if (isKnockout && predAdvance === null) {
+    return { error: "Pick which team advances." };
+  }
+
   const { error } = await supabase
     .from("predictions")
     .upsert(
-      { user_id: user.id, match_id: matchId, pred_home: predHome, pred_away: predAway },
+      {
+        user_id: user.id,
+        match_id: matchId,
+        pred_home: predHome,
+        pred_away: predAway,
+        pred_advance: isKnockout ? predAdvance : null,
+      },
       { onConflict: "user_id,match_id" },
     );
 

@@ -54,6 +54,9 @@ export type Database = {
           group_name: string | null;
           visible: boolean;
           round: string | null;
+          advance_winner: "home" | "away" | null;
+          pen_home: number | null;
+          pen_away: number | null;
         };
         Insert: {
           id: number;
@@ -69,6 +72,9 @@ export type Database = {
           group_name?: string | null;
           visible?: boolean;
           round?: string | null;
+          advance_winner?: "home" | "away" | null;
+          pen_home?: number | null;
+          pen_away?: number | null;
         };
         Update: {
           team_home?: string;
@@ -83,6 +89,9 @@ export type Database = {
           group_name?: string | null;
           visible?: boolean;
           round?: string | null;
+          advance_winner?: "home" | "away" | null;
+          pen_home?: number | null;
+          pen_away?: number | null;
         };
         Relationships: [];
       };
@@ -111,6 +120,7 @@ export type Database = {
           match_id: number;
           pred_home: number;
           pred_away: number;
+          pred_advance: "home" | "away" | null;
           points_won: number;
           is_calculated: boolean;
           created_at: string;
@@ -121,6 +131,7 @@ export type Database = {
           match_id: number;
           pred_home: number;
           pred_away: number;
+          pred_advance?: "home" | "away" | null;
           points_won?: number;
           is_calculated?: boolean;
           created_at?: string;
@@ -128,6 +139,7 @@ export type Database = {
         Update: {
           pred_home?: number;
           pred_away?: number;
+          pred_advance?: "home" | "away" | null;
           points_won?: number;
           is_calculated?: boolean;
         };

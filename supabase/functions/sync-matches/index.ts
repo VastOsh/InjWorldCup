@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
   // ── 2. Skip if no active matches in our DB ─────────────────────────────────
   const { data: activeMatches } = await adminClient
     .from("matches")
-    .select("id")
+    .select("id, round")
     .in("status", ["SCHEDULED", "LIVE"]);
 
   if (!activeMatches?.length) {
@@ -79,17 +79,23 @@ Deno.serve(async (req) => {
   }
 
   // ── 5. Map API fixture IDs to our DB IDs ───────────────────────────────────
-  const activeIds = new Set(activeMatches.map((m) => m.id));
+  // round is non-null only for knockout matches; we use it to gate the
+  // "who advances" capture below.
+  const roundById = new Map<number, string | null>(
+    activeMatches.map((m) => [m.id, m.round]),
+  );
   let updated = 0;
 
   for (const fixture of fixtures) {
     const f = fixture as {
       fixture: { id: number; status: { short: string } };
+      teams: { home: { winner: boolean | null }; away: { winner: boolean | null } };
       goals: { home: number | null; away: number | null };
+      score: { penalty: { home: number | null; away: number | null } };
     };
 
     const fixtureId: number = f.fixture.id;
-    if (!activeIds.has(fixtureId)) continue;
+    if (!roundById.has(fixtureId)) continue;
 
     const shortStatus: string = f.fixture.status.short;
     let dbStatus: "SCHEDULED" | "LIVE" | "FINISHED";
@@ -106,6 +112,19 @@ Deno.serve(async (req) => {
     if (dbStatus === "FINISHED" || dbStatus === "LIVE") {
       patch.score_home = f.goals.home;
       patch.score_away = f.goals.away;
+    }
+
+    // Knockout matches: once finished, record who advanced and the shootout
+    // score. goals.home/away already hold the 120' result (a draw when the tie
+    // went to penalties); teams.*.winner reflects the overall qualifier even
+    // when decided on penalties. Setting advance_winner in this same update is
+    // required so the scoring trigger sees it on the FINISHED transition.
+    if (dbStatus === "FINISHED" && roundById.get(fixtureId) !== null) {
+      patch.advance_winner = f.teams.home.winner === true ? "home"
+        : f.teams.away.winner === true ? "away"
+        : null;
+      patch.pen_home = f.score.penalty.home;
+      patch.pen_away = f.score.penalty.away;
     }
 
     const { error } = await adminClient
