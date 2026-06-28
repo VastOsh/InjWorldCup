@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import NavBar from "@/app/components/NavBar";
 import KnockoutBracket from "@/app/components/KnockoutBracket";
+import { resolveBracket, type MatchResult, type ResultMap } from "@/lib/knockoutData";
 
 export default async function KnockoutPage() {
   const supabase = await createClient();
@@ -13,6 +14,18 @@ export default async function KnockoutPage() {
     .select("wallet_address, avatar_url, username")
     .eq("id", user.id)
     .single();
+
+  // Live bracket: resolve "Winner match N" placeholders from finished knockout
+  // results, so saving a score advances the qualifier to the next round.
+  const { data: koMatches } = await supabase
+    .from("matches")
+    .select("id, team_home, team_away, score_home, score_away, advance_winner, status")
+    .not("round", "is", null);
+
+  const results: ResultMap = new Map(
+    (koMatches ?? []).map((m) => [m.id, m as MatchResult]),
+  );
+  const bracket = resolveBracket(results);
 
   return (
     <main className="min-h-screen bg-parchment">
@@ -42,7 +55,7 @@ export default async function KnockoutPage() {
             </div>
             <div className="flex-1 h-px bg-ink-faint" />
           </div>
-          <KnockoutBracket />
+          <KnockoutBracket bracket={bracket} />
         </section>
 
       </div>

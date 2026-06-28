@@ -39,7 +39,7 @@ export const KNOCKOUT_ROUNDS: KnockoutRound[] = [
     label: "Round of 16",
     matches: [
       { id: 89, date: "2026-07-04", home: "Winner match 75", away: "Winner match 78" },
-      { id: 90, date: "2026-07-04", home: "Canada",          away: "Winner match 76" },
+      { id: 90, date: "2026-07-04", home: "Winner match 73", away: "Winner match 76" },
       { id: 91, date: "2026-07-06", home: "Winner match 84", away: "Winner match 83" },
       { id: 92, date: "2026-07-07", home: "Winner match 82", away: "Winner match 81" },
       { id: 93, date: "2026-07-05", home: "Winner match 74", away: "Winner match 77" },
@@ -99,12 +99,14 @@ export type BracketHalf = {
   sf:  KnockoutMatch;
 };
 
-export const BRACKET: {
+export type Bracket = {
   left:   BracketHalf;
   final:  KnockoutMatch;
   right:  BracketHalf;
   bronze: KnockoutMatch;
-} = {
+};
+
+export const BRACKET: Bracket = {
   left: {
     // R32 pairs: [75,78]→R16-89  [73,76]→R16-90  [84,83]→R16-91  [82,81]→R16-92
     r32: [75, 78, 73, 76, 84, 83, 82, 81].map(findMatch),
@@ -126,3 +128,81 @@ export const BRACKET: {
   },
   bronze: findMatch(103),
 };
+
+// ─── Live resolution ────────────────────────────────────────────────────────
+// The bracket above is static topology: R16+ slots reference a feeder match as
+// "Winner match N" / "Runner-up match N". Given live results from the DB, we
+// swap those placeholders for the actual qualifier so the bracket fills itself
+// forward each time a score is saved. A slot whose feeder isn't FINISHED stays
+// a placeholder (rendered greyed-out by isTBD).
+
+export type MatchResult = {
+  team_home: string;
+  team_away: string;
+  score_home: number | null;
+  score_away: number | null;
+  advance_winner: "home" | "away" | null;
+  status: string;
+};
+
+export type ResultMap = Map<number, MatchResult>;
+
+// Who goes through. Knockout ties decided in ET/penalties end level on the
+// pitch, so advance_winner is authoritative when present; otherwise fall back
+// to the on-pitch scoreline. Returns null while the feeder is undecided.
+function winnerOf(r: MatchResult): string | null {
+  if (r.status !== "FINISHED") return null;
+  if (r.advance_winner) return r.advance_winner === "home" ? r.team_home : r.team_away;
+  if (r.score_home == null || r.score_away == null) return null;
+  if (r.score_home > r.score_away) return r.team_home;
+  if (r.score_away > r.score_home) return r.team_away;
+  return null; // level on the pitch but no advance_winner recorded yet
+}
+
+function loserOf(r: MatchResult): string | null {
+  if (r.status !== "FINISHED") return null;
+  if (r.advance_winner) return r.advance_winner === "home" ? r.team_away : r.team_home;
+  if (r.score_home == null || r.score_away == null) return null;
+  if (r.score_home > r.score_away) return r.team_away;
+  if (r.score_away > r.score_home) return r.team_home;
+  return null;
+}
+
+const WINNER_RE = /^Winner match (\d+)$/;
+const RUNNERUP_RE = /^Runner-up match (\d+)$/;
+
+function resolveLabel(label: string, results: ResultMap): string {
+  const w = WINNER_RE.exec(label);
+  if (w) {
+    const r = results.get(Number(w[1]));
+    return (r && winnerOf(r)) ?? label;
+  }
+  const l = RUNNERUP_RE.exec(label);
+  if (l) {
+    const r = results.get(Number(l[1]));
+    return (r && loserOf(r)) ?? label;
+  }
+  return label; // already a concrete team (Round of 32)
+}
+
+function resolveMatch(m: KnockoutMatch, results: ResultMap): KnockoutMatch {
+  return { ...m, home: resolveLabel(m.home, results), away: resolveLabel(m.away, results) };
+}
+
+function resolveHalf(h: BracketHalf, results: ResultMap): BracketHalf {
+  return {
+    r32: h.r32.map((m) => resolveMatch(m, results)),
+    r16: h.r16.map((m) => resolveMatch(m, results)),
+    qf:  h.qf.map((m) => resolveMatch(m, results)),
+    sf:  resolveMatch(h.sf, results),
+  };
+}
+
+export function resolveBracket(results: ResultMap): Bracket {
+  return {
+    left:   resolveHalf(BRACKET.left, results),
+    final:  resolveMatch(BRACKET.final, results),
+    right:  resolveHalf(BRACKET.right, results),
+    bronze: resolveMatch(BRACKET.bronze, results),
+  };
+}

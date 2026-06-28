@@ -1,4 +1,4 @@
-import { BRACKET, KnockoutMatch } from "@/lib/knockoutData";
+import { Bracket, KnockoutMatch } from "@/lib/knockoutData";
 
 function isTBD(label: string) {
   return label.startsWith("Winner") || label.startsWith("Runner-up");
@@ -74,8 +74,8 @@ function BracketHalf({
   );
 }
 
-export default function KnockoutBracket() {
-  const { left, right, final: finalMatch, bronze } = BRACKET;
+export default function KnockoutBracket({ bracket }: { bracket: Bracket }) {
+  const { left, right, final: finalMatch, bronze } = bracket;
 
   // Grid rows: [560px upper] [120px centre] [560px lower] = 1240px total
   // L-SF centre: y=280 · R-SF centre: y=960 · midpoint: y=620
