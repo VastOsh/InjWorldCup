@@ -38,14 +38,14 @@ export const KNOCKOUT_ROUNDS: KnockoutRound[] = [
     key: "r16",
     label: "Round of 16",
     matches: [
-      { id: 89, date: "2026-07-04", home: "Winner match 74", away: "Winner match 77" },
-      { id: 90, date: "2026-07-04", home: "Winner match 73", away: "Winner match 75" },
-      { id: 91, date: "2026-07-05", home: "Winner match 76", away: "Winner match 78" },
-      { id: 92, date: "2026-07-05", home: "Winner match 79", away: "Winner match 80" },
-      { id: 93, date: "2026-07-06", home: "Winner match 83", away: "Winner match 84" },
-      { id: 94, date: "2026-07-06", home: "Winner match 81", away: "Winner match 82" },
-      { id: 95, date: "2026-07-07", home: "Winner match 86", away: "Winner match 88" },
-      { id: 96, date: "2026-07-07", home: "Winner match 85", away: "Winner match 87" },
+      { id: 89, date: "2026-07-04", home: "Winner match 75", away: "Winner match 78" },
+      { id: 90, date: "2026-07-04", home: "Canada",          away: "Winner match 76" },
+      { id: 91, date: "2026-07-06", home: "Winner match 84", away: "Winner match 83" },
+      { id: 92, date: "2026-07-07", home: "Winner match 82", away: "Winner match 81" },
+      { id: 93, date: "2026-07-05", home: "Winner match 74", away: "Winner match 77" },
+      { id: 94, date: "2026-07-06", home: "Winner match 79", away: "Winner match 80" },
+      { id: 95, date: "2026-07-07", home: "Winner match 87", away: "Winner match 86" },
+      { id: 96, date: "2026-07-07", home: "Winner match 85", away: "Winner match 88" },
     ],
   },
   {
@@ -53,9 +53,9 @@ export const KNOCKOUT_ROUNDS: KnockoutRound[] = [
     label: "Quarter-finals",
     matches: [
       { id: 97,  date: "2026-07-09", home: "Winner match 89", away: "Winner match 90" },
-      { id: 98,  date: "2026-07-10", home: "Winner match 93", away: "Winner match 94" },
-      { id: 99,  date: "2026-07-11", home: "Winner match 91", away: "Winner match 92" },
-      { id: 100, date: "2026-07-11", home: "Winner match 95", away: "Winner match 96" },
+      { id: 98,  date: "2026-07-10", home: "Winner match 91", away: "Winner match 92" },
+      { id: 99,  date: "2026-07-11", home: "Winner match 93", away: "Winner match 94" },
+      { id: 100, date: "2026-07-12", home: "Winner match 95", away: "Winner match 96" },
     ],
   },
   {
@@ -106,10 +106,10 @@ export const BRACKET: {
   bronze: KnockoutMatch;
 } = {
   left: {
-    // R32 pairs: [74,77]→R16-89  [73,75]→R16-90  [83,84]→R16-93  [81,82]→R16-94
-    r32: [74, 77, 73, 75, 83, 84, 81, 82].map(findMatch),
-    // R16 pairs: [89,90]→QF-97  [93,94]→QF-98
-    r16: [89, 90, 93, 94].map(findMatch),
+    // R32 pairs: [75,78]→R16-89  [73,76]→R16-90  [84,83]→R16-91  [82,81]→R16-92
+    r32: [75, 78, 73, 76, 84, 83, 82, 81].map(findMatch),
+    // R16 pairs: [89,90]→QF-97  [91,92]→QF-98
+    r16: [89, 90, 91, 92].map(findMatch),
     // QF pair: [97,98]→SF-101
     qf:  [97, 98].map(findMatch),
     sf:  findMatch(101),
@@ -117,12 +117,12 @@ export const BRACKET: {
   final: findMatch(104),
   right: {
     sf:  findMatch(102),
-    // QF pair: [99,100]←SF-102
+    // QF pair: [99,100]→SF-102
     qf:  [99, 100].map(findMatch),
-    // R16 pairs: [91,92]←QF-99  [95,96]←QF-100
-    r16: [91, 92, 95, 96].map(findMatch),
-    // R32 pairs: [76,78]←R16-91  [79,80]←R16-92  [86,88]←R16-95  [85,87]←R16-96
-    r32: [76, 78, 79, 80, 86, 88, 85, 87].map(findMatch),
+    // R16 pairs: [93,94]→QF-99  [95,96]→QF-100
+    r16: [93, 94, 95, 96].map(findMatch),
+    // R32 pairs: [74,77]→R16-93  [79,80]→R16-94  [87,86]→R16-95  [85,88]→R16-96
+    r32: [74, 77, 79, 80, 87, 86, 85, 88].map(findMatch),
   },
   bronze: findMatch(103),
 };
