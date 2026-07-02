@@ -78,9 +78,12 @@ export default async function HomePage() {
       otherMatches.push(match);
     }
   }
+  // Reverse tournament order so the most advanced (next-to-play) round sits on
+  // top — e.g. Round of 16 above Round of 32 once the R16 draw is known.
   const roundSections = KNOCKOUT_ROUNDS
     .filter((r) => roundMap.has(r.code))
-    .map((r) => ({ label: r.label, matches: roundMap.get(r.code)! }));
+    .map((r) => ({ label: r.label, matches: roundMap.get(r.code)! }))
+    .reverse();
 
   return (
     <main className="min-h-screen bg-parchment">
