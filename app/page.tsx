@@ -5,6 +5,7 @@ import NavBar from "@/app/components/NavBar";
 import TiebreakerInput from "@/app/components/TiebreakerInput";
 import MatchGrid from "@/app/components/MatchGrid";
 import GroupAccordion from "@/app/components/GroupAccordion";
+import RoundAccordion from "@/app/components/RoundAccordion";
 import { KNOCKOUT_ROUNDS } from "@/lib/rounds";
 import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
 import type { Database } from "@/lib/supabase/types";
@@ -136,6 +137,15 @@ export default async function HomePage() {
           </p>
         )}
 
+        {/* ── Knockout rounds (collapsible, kept on top for quick access) ── */}
+        {roundSections.length > 0 && (
+          <RoundAccordion
+            rounds={roundSections}
+            predByMatchId={predByMatchId as Record<number, Prediction>}
+            lockedIds={lockedIds}
+          />
+        )}
+
         {/* ── Group-stage sections (collapsible) ────────────────────────── */}
         {groupEntries.length > 0 && (
           <GroupAccordion
@@ -147,28 +157,6 @@ export default async function HomePage() {
             lockedIds={lockedIds}
           />
         )}
-
-        {/* ── Knockout rounds (each round in its own labelled section) ───── */}
-        {roundSections.map(({ label, matches: roundMatches }) => (
-          <section key={label}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="border-2 border-ink px-3 py-1">
-                <span className="font-black text-xs tracking-[0.2em] uppercase text-ink">
-                  {label}
-                </span>
-              </div>
-              <div className="flex-1 h-px bg-ink-faint" />
-              <span className="font-mono text-[11px] text-ink-muted">
-                {roundMatches.length} match{roundMatches.length !== 1 ? "es" : ""}
-              </span>
-            </div>
-            <MatchGrid
-              matches={roundMatches}
-              predByMatchId={predByMatchId as Record<number, Prediction>}
-              lockedIds={lockedIds}
-            />
-          </section>
-        ))}
 
         {/* ── Anything still unclassified (friendlies / no round) ────────── */}
         {otherMatches.length > 0 && (
