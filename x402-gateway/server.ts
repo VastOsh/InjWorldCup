@@ -28,14 +28,16 @@ const RPC_URL = process.env.X402_RPC_URL || "https://k8s.testnet.json-rpc.inject
 const PORT = Number(process.env.GATEWAY_PORT || 4021);
 const PAY_TO = process.env.X402_PAY_TO as `0x${string}` | undefined;
 
-const relayerKey = process.env.X402_RELAYER_PRIVATE_KEY as `0x${string}` | undefined;
-if (!relayerKey) {
+const rawRelayer = process.env.X402_RELAYER_PRIVATE_KEY?.trim();
+if (!rawRelayer) {
   console.error(
     "X402_RELAYER_PRIVATE_KEY is required (a testnet wallet with a little INJ for gas). " +
       "It settles payments and, by default, receives the USDC.",
   );
   process.exit(1);
 }
+// Accept keys with or without the 0x prefix (viem requires it).
+const relayerKey = (rawRelayer.startsWith("0x") ? rawRelayer : `0x${rawRelayer}`) as `0x${string}`;
 
 const app = express();
 app.use(express.json());

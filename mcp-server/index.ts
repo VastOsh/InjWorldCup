@@ -159,12 +159,14 @@ server.registerTool(
     inputSchema: { matchId: z.number().int().describe("Match id") },
   },
   async ({ matchId }) => {
-    const key = process.env.X402_PAYER_PRIVATE_KEY as `0x${string}` | undefined;
-    if (!key) {
+    const rawKey = process.env.X402_PAYER_PRIVATE_KEY?.trim();
+    if (!rawKey) {
       return fail(
         "Set X402_PAYER_PRIVATE_KEY to a funded testnet wallet (holds testnet USDC) to buy premium analysis.",
       );
     }
+    // Accept keys with or without the 0x prefix (viem requires it).
+    const key = (rawKey.startsWith("0x") ? rawKey : `0x${rawKey}`) as `0x${string}`;
     const gateway = process.env.X402_GATEWAY_URL || "http://localhost:4021";
     try {
       const client = createInjectiveClient({ privateKey: key, rpcUrl: process.env.X402_RPC_URL });
