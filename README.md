@@ -81,3 +81,36 @@ Verification is pluggable (`lib/x402/verify.ts`):
 - [ ] Wire wallet signing in `lib/x402/client.ts` (`buildPayment`, facilitator branch) via `@injectivelabs/x402`.
 
 All x402 configuration lives in `.env.example`.
+
+## MCP Server (agent tools)
+
+`mcp-server/` is a [Model Context Protocol](https://modelcontextprotocol.io) server that exposes the platform to AI agents. It reuses the **same analytics engine** as the website, so agents and the UI share one brain.
+
+**Tools:** `list_fixtures`, `get_match`, `get_standings`, `get_bracket`, `get_leaderboard`, `get_analysis` (free AI analysis), and `get_premium_analysis` (pays with USDC over x402).
+
+Run it (no build step — Node 24 strips types):
+
+```bash
+SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+  node --experimental-strip-types mcp-server/index.ts
+```
+
+Register it with an MCP client (e.g. Claude Desktop / Claude Code):
+
+```json
+{
+  "mcpServers": {
+    "worldcup": {
+      "command": "node",
+      "args": ["--experimental-strip-types", "mcp-server/index.ts"],
+      "cwd": "/absolute/path/to/InjWorldCup",
+      "env": {
+        "SUPABASE_URL": "https://your-project.supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key"
+      }
+    }
+  }
+}
+```
+
+Now an agent can ask *"analyze the Brazil match and tell me if there's value"* and it runs against live World Cup data.

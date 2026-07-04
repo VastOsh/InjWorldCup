@@ -1,0 +1,11 @@
+{
+  "name": "worldcup-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server exposing InjWorldCup fixtures, odds, standings, bracket, leaderboard and the AI analytics engine as agent tools.",
+  "bin": { "worldcup-mcp": "index.ts" },
+  "scripts": {
+    "start": "node --experimental-strip-types index.ts"
+  }
+}
