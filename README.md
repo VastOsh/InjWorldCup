@@ -114,3 +114,36 @@ Register it with an MCP client (e.g. Claude Desktop / Claude Code):
 ```
 
 Now an agent can ask *"analyze the Brazil match and tell me if there's value"* and it runs against live World Cup data.
+
+### Agent pays for premium analysis (real testnet x402)
+
+This is x402's native use case — a machine paying per call. The flow:
+
+```
+MCP get_premium_analysis  ──POST──▶  x402-gateway (/premium)
+   (createInjectiveClient,              (injectivePaymentMiddleware
+    payer key + testnet USDC)            + embedded facilitator/relayer key)
+        ▲                                        │
+        └──────── 402 → sign EIP-3009 ───────────┘
+                  → settle USDC on Injective → report
+```
+
+The **agent** (`get_premium_analysis`) signs an EIP-3009 authorization (gasless); the **gateway** verifies and settles it on-chain via a relayer wallet, moving testnet USDC to `X402_PAY_TO`, then returns the deep report. No accounts, no API keys — payment *is* the authorization.
+
+**Run both:**
+
+```bash
+# 1) the paid resource server
+node --experimental-strip-types x402-gateway/server.ts
+# 2) point the MCP server's payer + gateway env at it, then call get_premium_analysis
+```
+
+**Testnet setup checklist (all free):**
+
+- [ ] Two Injective EVM **testnet** wallets: a **relayer** (gateway) and a **payer** (agent).
+- [ ] Fund the **relayer** with a little **testnet INJ** (gas) — [Injective testnet faucet](https://testnet.faucet.injective.network).
+- [ ] Fund the **payer** with **testnet USDC** (`0x0C38…4C5d`).
+- [ ] Set `X402_RELAYER_PRIVATE_KEY`, `X402_PAYER_PRIVATE_KEY` (see `.env.example`); network/asset/RPC already default to testnet.
+- [ ] Start the gateway, then call `get_premium_analysis` — the agent pays and the report unlocks.
+
+> The website's Unlock button stays in **mock** mode (frictionless demo for humans); real on-chain settlement is demonstrated through the agent flow above.

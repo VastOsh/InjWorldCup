@@ -7,7 +7,16 @@
 // Kelly-lite suggested stake derived from the model's edge over the market.
 // =============================================================================
 
-import { poisson, type Analysis, type Outcome } from "@/lib/analytics/engine";
+import type { Analysis, Outcome } from "./engine";
+
+// Local copy of the Poisson pmf (kept type-only on the engine import so this
+// module is importable from standalone Node services without path aliases).
+function poisson(k: number, lambda: number): number {
+  if (lambda <= 0) return k === 0 ? 1 : 0;
+  let logP = -lambda + k * Math.log(lambda);
+  for (let i = 2; i <= k; i++) logP -= Math.log(i);
+  return Math.exp(logP);
+}
 
 export interface StakeSuggestion {
   outcome: Outcome;

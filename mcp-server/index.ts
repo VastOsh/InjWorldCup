@@ -11,13 +11,10 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createInjectiveClient } from "@injectivelabs/x402/client";
 import { z } from "zod";
 import { db } from "./db.ts";
-import {
-  analyzeMatch,
-  leagueAverages,
-  type TeamForm,
-} from "../lib/analytics/engine.ts";
+import { computeStandings, loadAnalysis, type StandingAgg } from "./analytics.ts";
 
 /** Wrap any JSON-serialisable value as an MCP text result. */
 function json(value: unknown) {
@@ -25,51 +22,6 @@ function json(value: unknown) {
 }
 function fail(message: string) {
   return { content: [{ type: "text" as const, text: `Error: ${message}` }], isError: true };
-}
-
-interface StandingAgg {
-  group_name: string; team_name: string;
-  mp: number; w: number; d: number; l: number;
-  gf: number; ga: number; gd: number; pts: number;
-}
-
-/**
- * Aggregate group-stage standings straight from finished group matches. Avoids
- * the group_standings view (security_invoker; not granted to service_role) so
- * the server stays self-contained.
- */
-async function computeStandings(): Promise<StandingAgg[]> {
-  const { data, error } = await db()
-    .from("matches")
-    .select("team_home, team_away, score_home, score_away, group_name, status")
-    .not("group_name", "is", null)
-    .eq("status", "FINISHED");
-  if (error) throw new Error(error.message);
-
-  const table = new Map<string, StandingAgg>();
-  const row = (group: string, team: string) => {
-    const key = `${group}:${team}`;
-    let r = table.get(key);
-    if (!r) {
-      r = { group_name: group, team_name: team, mp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
-      table.set(key, r);
-    }
-    return r;
-  };
-
-  for (const m of data ?? []) {
-    if (m.score_home === null || m.score_away === null || !m.group_name) continue;
-    const h = row(m.group_name, m.team_home);
-    const a = row(m.group_name, m.team_away);
-    h.mp++; a.mp++;
-    h.gf += m.score_home; h.ga += m.score_away;
-    a.gf += m.score_away; a.ga += m.score_home;
-    if (m.score_home > m.score_away) { h.w++; h.pts += 3; a.l++; }
-    else if (m.score_home < m.score_away) { a.w++; a.pts += 3; h.l++; }
-    else { h.d++; a.d++; h.pts++; a.pts++; }
-  }
-  for (const r of table.values()) r.gd = r.gf - r.ga;
-  return [...table.values()];
 }
 
 const server = new McpServer({ name: "worldcup-mcp", version: "0.1.0" });
@@ -121,7 +73,7 @@ server.registerTool(
   async ({ group }) => {
     let rows: StandingAgg[];
     try {
-      rows = await computeStandings();
+      rows = await computeStandings(db());
     } catch (e) {
       return fail((e as Error).message);
     }
@@ -179,33 +131,13 @@ server.registerTool(
     inputSchema: { matchId: z.number().int().describe("Match id") },
   },
   async ({ matchId }) => {
-    let match, standings: StandingAgg[];
+    let a;
     try {
-      const [{ data, error }] = [await db().from("matches").select("*").eq("id", matchId).single()];
-      if (error) return fail(error.message);
-      match = data;
-      standings = await computeStandings();
+      a = await loadAnalysis(db(), matchId);
     } catch (e) {
       return fail((e as Error).message);
     }
-    if (!match) return fail("Match not found");
-
-    const forms: TeamForm[] = standings.map((r) => ({
-      team: r.team_name, mp: r.mp, gf: r.gf, ga: r.ga,
-    }));
-    const byTeam = new Map(forms.map((f) => [f.team, f]));
-    const a = analyzeMatch({
-      home: match.team_home,
-      away: match.team_away,
-      odds: {
-        home: Number(match.multiplier_home),
-        draw: Number(match.multiplier_draw),
-        away: Number(match.multiplier_away),
-      },
-      homeForm: byTeam.get(match.team_home) ?? null,
-      awayForm: byTeam.get(match.team_away) ?? null,
-      league: leagueAverages(forms),
-    });
+    if (!a) return fail("Match not found");
     return json({
       match: `${a.home} vs ${a.away}`,
       predictedScore: `${a.predictedScore.home}-${a.predictedScore.away}`,
@@ -215,6 +147,41 @@ server.registerTool(
       value: a.value,
       note: "Premium deep analysis (xG, scoreline map, stake) is available via get_premium_analysis, which pays with USDC over x402.",
     });
+  },
+);
+
+// ── get_premium_analysis (paid — agent pays USDC over x402) ──────────────────
+server.registerTool(
+  "get_premium_analysis",
+  {
+    description:
+      "Deep analysis (expected goals, Over 2.5 / BTTS, scoreline probability map, suggested stake). This tool PAYS for the data: it calls the x402-protected gateway and settles a small USDC payment on Injective automatically before returning the report.",
+    inputSchema: { matchId: z.number().int().describe("Match id") },
+  },
+  async ({ matchId }) => {
+    const key = process.env.X402_PAYER_PRIVATE_KEY as `0x${string}` | undefined;
+    if (!key) {
+      return fail(
+        "Set X402_PAYER_PRIVATE_KEY to a funded testnet wallet (holds testnet USDC) to buy premium analysis.",
+      );
+    }
+    const gateway = process.env.X402_GATEWAY_URL || "http://localhost:4021";
+    try {
+      const client = createInjectiveClient({ privateKey: key, rpcUrl: process.env.X402_RPC_URL });
+      const resp = await client.fetch(`${gateway}/premium`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ matchId }),
+      });
+      if (!resp.ok) {
+        return fail(`Gateway responded ${resp.status}: ${await resp.text()}`);
+      }
+      const receipt = resp.headers.get("payment-response") || resp.headers.get("x-payment-response");
+      const data = (await resp.json()) as Record<string, unknown>;
+      return json({ ...data, paid: true, settlement: receipt ? "settled on Injective" : "unknown" });
+    } catch (e) {
+      return fail(`Payment/fetch failed: ${(e as Error).message}`);
+    }
   },
 );
 

@@ -1,0 +1,10 @@
+{
+  "name": "worldcup-x402-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "x402-protected resource server: sells deep AI match analysis for USDC on Injective, settled via an embedded facilitator.",
+  "scripts": {
+    "start": "node --experimental-strip-types server.ts"
+  }
+}
