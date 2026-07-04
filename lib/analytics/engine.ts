@@ -48,6 +48,8 @@ export interface Scoreline {
 export interface Analysis {
   home: string;
   away: string;
+  /** Raw decimal odds (match multipliers) as offered. */
+  odds: MatchOdds;
   /** Most likely 90-minute scoreline under the model. */
   predictedScore: { home: number; away: number };
   /** Expected goals (Poisson means) for each side. */
@@ -100,7 +102,7 @@ export function leagueAverages(forms: TeamForm[]): LeagueAverages {
 }
 
 /** Poisson pmf: probability of exactly k events given mean λ. */
-function poisson(k: number, lambda: number): number {
+export function poisson(k: number, lambda: number): number {
   if (lambda <= 0) return k === 0 ? 1 : 0;
   let logP = -lambda + k * Math.log(lambda);
   for (let i = 2; i <= k; i++) logP -= Math.log(i);
@@ -210,6 +212,7 @@ export function analyzeMatch(params: {
   return {
     home,
     away,
+    odds,
     predictedScore,
     lambda,
     modelProbs,
