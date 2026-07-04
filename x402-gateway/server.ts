@@ -24,7 +24,11 @@ const NETWORK = process.env.X402_NETWORK || "eip155:1439"; // Injective EVM test
 const ASSET = (process.env.X402_ASSET ||
   "0x0C382e685bbeeFE5d3d9C29e29E341fEE8E84C5d") as `0x${string}`; // testnet USDC
 const PRICE = process.env.X402_PRICE_ATOMIC || "10000"; // $0.01 (6 decimals)
-const RPC_URL = process.env.X402_RPC_URL || "https://k8s.testnet.json-rpc.injective.network";
+// Archival gateway RPC (not round-robin load-balanced) so the facilitator's
+// settle → wait-for-receipt is consistent; the k8s endpoint races the receipt.
+const RPC_URL =
+  process.env.X402_RPC_URL ||
+  "https://testnet.evm.archival.chain.virtual.json-rpc.injective.network/";
 const PORT = Number(process.env.GATEWAY_PORT || 4021);
 const PAY_TO = process.env.X402_PAY_TO as `0x${string}` | undefined;
 
