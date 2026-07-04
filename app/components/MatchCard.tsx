@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { savePrediction } from "@/app/actions/predictions";
+import AIInsights from "@/app/components/AIInsights";
 import { flagUrl } from "@/lib/teamFlags";
 import type { Database } from "@/lib/supabase/types";
 
@@ -359,6 +360,9 @@ export default function MatchCard({
         {error && (
           <p className="font-mono text-[11px] text-accent text-center">{error}</p>
         )}
+
+        {/* AI match analytics — deterministic model vs market odds */}
+        <AIInsights matchId={match.id} teamHome={match.team_home} teamAway={match.team_away} />
       </div>
     </motion.div>
   );
