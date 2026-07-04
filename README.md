@@ -2,6 +2,17 @@
 
 World Cup 2026 score prediction game built on Injective. Predict exact match scorelines, earn points, and compete on a real-time leaderboard — with identity bridged from Discord and wallet verification on Injective.
 
+## Injective Global Cup — technologies used
+
+| Tech | Where | What it does |
+|------|-------|--------------|
+| **MCP Server** | `mcp-server/` | Exposes live fixtures, odds, standings, bracket, leaderboard and the AI analytics engine as agent tools |
+| **Agent Skills** | `skills/worldcup-analyst/` | A reusable skill that drives the MCP tools to predict scorelines and find value bets |
+| **x402** | `x402-gateway/`, `app/api/analysis/premium/` | Pay-per-call USDC micropayments (EIP-3009, gasless payer) gating the deep analysis report; agent-pays flow settles on Injective testnet |
+| **CCTP** | _planned_ | Cross-chain USDC on-ramp to fund the agent/payer wallet |
+
+See [AI Analytics + x402](#ai-analytics--x402-injective), [MCP Server](#mcp-server-agent-tools), and [Agent Skill](#agent-skill) below.
+
 ## Stack
 
 - **Next.js 16** (App Router, Server Actions)
@@ -147,3 +158,13 @@ node --experimental-strip-types x402-gateway/server.ts
 - [ ] Start the gateway, then call `get_premium_analysis` — the agent pays and the report unlocks.
 
 > The website's Unlock button stays in **mock** mode (frictionless demo for humans); real on-chain settlement is demonstrated through the agent flow above.
+
+## Agent Skill
+
+`skills/worldcup-analyst/` is a reusable **Agent Skill**. It teaches an agent to
+drive the `worldcup` MCP tools end-to-end: resolve a fixture, run the free
+analysis, read model-vs-market value honestly, optionally **pay via x402** for
+the deep report, and produce a disciplined betting verdict. `SKILL.md` holds the
+workflow and guardrails; `references/methodology.md` documents the model so the
+agent can explain its reasoning. Drop the folder into any skills-aware agent
+(e.g. Claude Code / Claude Desktop) alongside the MCP server.
