@@ -92,18 +92,13 @@ See `.env.example` for all required variables.
 
 ### Database
 
-Run the migrations in `supabase/migrations/` against your Supabase project, then deploy the edge functions:
+Run the migrations in `supabase/migrations/` against your Supabase project, then deploy the wallet-linking edge function:
 
 ```bash
 npx supabase functions deploy link-wallet --project-ref <your-ref>
-npx supabase functions deploy sync-matches --project-ref <your-ref>
 ```
 
-Add `API_FOOTBALL_KEY` as a Supabase secret:
-
-```bash
-npx supabase secrets set API_FOOTBALL_KEY=your-key --project-ref <your-ref>
-```
+**Match data is curated manually** (fixtures, kickoff times, odds and results are entered directly in the `matches` table). A live-sync path against a football data API was intentionally left unused — the analytics, scoring, standings and bracket all compute from the hand-maintained match rows, so there are no paid API keys or per-request costs to run the project.
 
 ## AI Analytics + x402 (Injective)
 
