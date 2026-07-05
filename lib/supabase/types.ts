@@ -107,12 +107,6 @@ export type Database = {
         Update: { value_int?: number | null };
         Relationships: [];
       };
-      api_request_log: {
-        Row: { date: string; count: number };
-        Insert: { date?: string; count?: number };
-        Update: { count?: number };
-        Relationships: [];
-      };
       predictions: {
         Row: {
           id: string;
