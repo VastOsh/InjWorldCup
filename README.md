@@ -9,7 +9,7 @@ World Cup 2026 score prediction game built on Injective. Predict exact match sco
 | **MCP Server** | `mcp-server/` | Exposes live fixtures, odds, standings, bracket, leaderboard and the AI analytics engine as agent tools |
 | **Agent Skills** | `skills/worldcup-analyst/` | A reusable skill that drives the MCP tools to predict scorelines and find value bets |
 | **x402** | `x402-gateway/`, `app/api/analysis/premium/` | Pay-per-call USDC micropayments (EIP-3009, gasless payer) gating the deep analysis report; agent-pays flow settles on Injective testnet |
-| **CCTP** | _planned_ | Cross-chain USDC on-ramp to fund the agent/payer wallet |
+| **CCTP** | `cctp/` | Cross-chain USDC on-ramp (CCTP V2) — bridges USDC from Base/Avalanche/Ethereum testnet into Injective to fund the agent/payer wallet |
 
 See [AI Analytics + x402](#ai-analytics--x402-injective), [MCP Server](#mcp-server-agent-tools), and [Agent Skill](#agent-skill) below.
 
@@ -168,3 +168,38 @@ the deep report, and produce a disciplined betting verdict. `SKILL.md` holds the
 workflow and guardrails; `references/methodology.md` documents the model so the
 agent can explain its reasoning. Drop the folder into any skills-aware agent
 (e.g. Claude Code / Claude Desktop) alongside the MCP server.
+
+## CCTP — cross-chain USDC on-ramp
+
+`cctp/bridge.ts` funds the agent's payer wallet from another chain using
+**Circle's CCTP V2**. It closes the loop: *CCTP funds the wallet → x402 pays per
+call → MCP + Skill drive it.*
+
+Flow (source chain → **Injective testnet**, domain `29`):
+
+1. `approve` USDC → `TokenMessengerV2` on the source chain
+2. `depositForBurn(…, destinationDomain=29, …)` — burns USDC on the source
+3. poll Circle's IRIS attestation service until the message is `complete`
+4. `receiveMessage(message, attestation)` on Injective — mints native USDC
+
+```bash
+CCTP_SOURCE=baseSepolia \
+CCTP_SOURCE_PRIVATE_KEY=0x... \
+CCTP_AMOUNT=1 \
+  node --experimental-strip-types cctp/bridge.ts
+```
+
+**Testnet setup checklist:**
+
+- [ ] A **source-chain** wallet (Base Sepolia / Avalanche Fuji / Ethereum Sepolia)
+      with **testnet USDC** ([faucet.circle.com](https://faucet.circle.com)) and a
+      little native gas (chain faucet).
+- [ ] Set `CCTP_SOURCE`, `CCTP_SOURCE_PRIVATE_KEY`, `CCTP_AMOUNT`. The mint target
+      defaults to the x402 payer wallet, so bridged USDC lands where the agent spends it.
+- [ ] Run the bridge — attestation can take a few minutes; the script polls and
+      then mints on Injective automatically.
+
+Supported source domains: Ethereum Sepolia `0`, Avalanche Fuji `1`, Base Sepolia `6`.
+CCTP V2 contracts (`TokenMessengerV2` / `MessageTransmitterV2`) are deployed at the
+same addresses on every chain; the addresses and Injective's domain (`29`) are in
+`cctp/bridge.ts`.

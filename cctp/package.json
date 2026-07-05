@@ -1,0 +1,10 @@
+{
+  "name": "worldcup-cctp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CCTP V2 inbound bridge: move testnet USDC from a source chain into Injective testnet to fund the agent's payer wallet.",
+  "scripts": {
+    "start": "node --experimental-strip-types bridge.ts"
+  }
+}
