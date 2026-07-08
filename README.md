@@ -42,7 +42,7 @@ The website and the agent surface are powered by the **same deterministic engine
 | **MCP Server** | `mcp-server/` | A Model Context Protocol server exposes live fixtures, odds, standings, bracket, leaderboard and the AI analytics engine as **7 agent tools**. | ✅ verified live |
 | **Agent Skills** | `skills/worldcup-analyst/` | A reusable **Agent Skill** that drives the MCP tools end-to-end — resolve a fixture, analyze value, pay for and read the deep report, and give a disciplined verdict. | ✅ |
 | **x402** | `x402-gateway/`, `app/api/analysis/premium/` | HTTP-native **pay-per-call USDC micropayments** (EIP-3009, gasless payer) gate the deep analysis. The agent signs, an embedded facilitator settles on **Injective testnet**. | ✅ **real USDC settled on testnet** |
-| **CCTP** | `cctp/` | **Circle CCTP V2** cross-chain on-ramp: burn USDC on Base/Avalanche/Ethereum testnet → attest → mint on **Injective (domain 29)** to fund the agent's payer wallet. | ✅ contracts verified on-chain |
+| **CCTP** | `cctp/` | **Circle CCTP V2** cross-chain on-ramp: burn USDC on Base/Avalanche/Ethereum testnet → attest → mint on **Injective (domain 29)** to fund the agent's payer wallet. | ✅ **bridged end-to-end on testnet** |
 
 Each links to a detailed section below: [x402](#ai-analytics--x402-injective) · [MCP Server](#mcp-server-agent-tools) · [Agent Skill](#agent-skill) · [CCTP](#cctp--cross-chain-usdc-on-ramp).
 
@@ -238,3 +238,9 @@ Supported source domains: Ethereum Sepolia `0`, Avalanche Fuji `1`, Base Sepolia
 CCTP V2 contracts (`TokenMessengerV2` / `MessageTransmitterV2`) are deployed at the
 same addresses on every chain; the addresses and Injective's domain (`29`) are in
 `cctp/bridge.ts`.
+
+**Verified end-to-end on testnet.** A live run bridged **1 USDC from Base Sepolia
+to Injective** (Injective USDC balance `39.98 → 40.98` for the payer wallet):
+
+- burn (`depositForBurn`, Base Sepolia): [`0xc81e47ae…ade290`](https://sepolia.basescan.org/tx/0xc81e47ae3302249198538988b51b65dea8c0f7f92d70f6270abc7d5e55ade290)
+- mint (`receiveMessage`, Injective): [`0x614dee54…f49871b`](https://testnet.blockscout.injective.network/tx/0x614dee5487cff19fd2a60b138752dd5c8eb71c799dcce3aa16414b362f49871b)
