@@ -38,14 +38,15 @@ export default function RoundAccordion({
   predByMatchId: Record<number, Prediction>;
   lockedIds: number[];
 }) {
-  // Default: every round expanded. Hydrated from localStorage after mount so
-  // server and client first render agree (avoids hydration mismatch).
+  // Default: every round collapsed. With the tournament finished there are 100+
+  // played fixtures, so opening them all buries everything below the fold.
+  // A player's own toggles still win — saved state is merged in below.
   const [openMap, setOpenMap] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(rounds.map((r) => [r.label, true])),
+    Object.fromEntries(rounds.map((r) => [r.label, false])),
   );
 
   // Hydrate from localStorage after mount. Reading storage during render (or in
-  // a lazy initializer) would diverge from the server's all-open render and
+  // a lazy initializer) would diverge from the server's all-closed render and
   // cause a hydration mismatch, so it has to happen in an effect.
   useEffect(() => {
     try {
@@ -74,7 +75,7 @@ export default function RoundAccordion({
   return (
     <div className="flex flex-col gap-10">
       {rounds.map(({ label, matches }) => {
-        const open = openMap[label] ?? true;
+        const open = openMap[label] ?? false;
         return (
           <section key={label}>
             <button

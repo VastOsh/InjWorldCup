@@ -61,6 +61,19 @@ export const getFinalStandings = cache(async (): Promise<FinalStanding[]> => {
   return data ?? [];
 });
 
+// Homepage banner only needs the medallists — pulling all 159 rows there would
+// be wasteful on the most-visited page.
+export const getTopStandings = cache(async (limit = 3): Promise<FinalStanding[]> => {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("final_standings")
+    .select(STANDING_COLUMNS)
+    .order("rank", { ascending: true })
+    .limit(limit);
+  logIfError("getTopStandings", error);
+  return data ?? [];
+});
+
 export const getStandingBySlug = cache(async (slug: string): Promise<FinalStanding | null> => {
   const supabase = createAdminClient();
   const { data, error } = await supabase

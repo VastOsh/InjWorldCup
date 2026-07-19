@@ -38,14 +38,15 @@ export default function GroupAccordion({
   predByMatchId: Record<number, Prediction>;
   lockedIds: number[];
 }) {
-  // Default: every group expanded. Hydrated from localStorage after mount so
-  // server and client first render agree (avoids hydration mismatch).
+  // Default: every group collapsed. With the tournament finished there are 100+
+  // played fixtures, so opening them all buries everything below the fold.
+  // A player's own toggles still win — saved state is merged in below.
   const [openMap, setOpenMap] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(groups.map((g) => [g.groupName, true])),
+    Object.fromEntries(groups.map((g) => [g.groupName, false])),
   );
 
   // Hydrate from localStorage after mount. Reading storage during render (or in
-  // a lazy initializer) would diverge from the server's all-open render and
+  // a lazy initializer) would diverge from the server's all-closed render and
   // cause a hydration mismatch, so it has to happen in an effect.
   useEffect(() => {
     try {
@@ -90,7 +91,7 @@ export default function GroupAccordion({
       </div>
 
       {groups.map(({ groupName, matches }) => {
-        const open = openMap[groupName] ?? true;
+        const open = openMap[groupName] ?? false;
         const predicted = matches.filter((m) => predByMatchId[m.id]).length;
         return (
           <section key={groupName}>

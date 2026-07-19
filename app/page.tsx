@@ -2,12 +2,19 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import NavBar from "@/app/components/NavBar";
+import ChampionBanner from "@/app/components/ChampionBanner";
 import TiebreakerInput from "@/app/components/TiebreakerInput";
 import MatchGrid from "@/app/components/MatchGrid";
 import GroupAccordion from "@/app/components/GroupAccordion";
 import RoundAccordion from "@/app/components/RoundAccordion";
 import { KNOCKOUT_ROUNDS } from "@/lib/rounds";
 import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
+import {
+  getTopStandings,
+  getStandingByUserId,
+  isEventFinished,
+  totalPlayerCount,
+} from "@/lib/podium";
 import type { Database } from "@/lib/supabase/types";
 
 type Match = Database["public"]["Tables"]["matches"]["Row"];
@@ -41,6 +48,13 @@ export default async function HomePage() {
   ]);
 
   const userRank = (aboveCount ?? 0) + 1;
+
+  // Podium banner data. Only fetched once the event is flagged finished, so the
+  // homepage costs no extra queries during a live tournament.
+  const eventFinished = await isEventFinished();
+  const [topStandings, myStanding, playerCount] = eventFinished
+    ? await Promise.all([getTopStandings(3), getStandingByUserId(user.id), totalPlayerCount()])
+    : [[], null, 0];
 
   const predByMatchId = Object.fromEntries((predictions ?? []).map((p) => [p.match_id, p]));
   const tiebreakerVisible = (tbConfig?.value_int ?? 0) === 1;
@@ -91,6 +105,15 @@ export default async function HomePage() {
       <NavBar userId={user.id} walletAddress={profile?.wallet_address ?? null} activePath="/" avatarUrl={profile?.avatar_url} username={profile?.username} />
 
       <div className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-10">
+
+        {/* ── Champion banner (tournament over) ─────────────────────────── */}
+        {eventFinished && (
+          <ChampionBanner
+            top={topStandings}
+            myStanding={myStanding}
+            playerCount={playerCount}
+          />
+        )}
 
         {/* ── Profile card ─────────────────────────────────────────────── */}
         <div className="flex items-center gap-5 border-2 border-ink bg-surface px-6 py-5 shadow-brutal">
