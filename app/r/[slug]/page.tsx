@@ -14,8 +14,11 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
+// Canonical host. The apex injcup.xyz 308-redirects to www, so www is the
+// primary domain — share links must point there directly rather than relying on
+// a social crawler to follow the redirect.
 function siteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://injcup.xyz").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.injcup.xyz").replace(/\/$/, "");
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -37,8 +40,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `${siteUrl()}/r/${standing.share_slug}`;
 
   return {
+    // Without metadataBase, Next resolves the opengraph-image to an absolute URL
+    // using VERCEL_URL — the raw deployment hostname, not the custom domain.
+    // That host sits behind Vercel's deployment protection on previews, so a
+    // social crawler fetching the image gets an auth wall and renders no card.
+    metadataBase: new URL(siteUrl()),
     title,
     description,
+    alternates: { canonical: url },
     openGraph: { title, description, url, type: "website" },
     twitter: { card: "summary_large_image", title, description },
   };

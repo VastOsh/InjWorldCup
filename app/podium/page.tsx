@@ -96,7 +96,10 @@ export default async function PodiumPage() {
     );
   }
 
-  const shareBaseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://injcup.xyz").replace(/\/$/, "");
+  // www is the canonical host — the apex 308-redirects to it. Share links point
+  // there directly so X's crawler doesn't have to follow a redirect to find the
+  // OG card.
+  const shareBaseUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.injcup.xyz").replace(/\/$/, "");
 
   return (
     <main className="min-h-screen bg-parchment">
