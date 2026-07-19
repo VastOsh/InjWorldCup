@@ -39,35 +39,47 @@ export type CountryStanding = {
 const STANDING_COLUMNS =
   "rank, user_id, username, avatar_url, country, total_points, exact_count, played_count, best_points, best_match_id, best_label, share_slug";
 
+// Postgres errors here are indistinguishable from "no such row" once the error
+// is discarded, which is exactly how a missing table GRANT (42501) surfaced as a
+// 404 on a perfectly valid share slug instead of something diagnosable.
+// Log loudly and keep the null/[] fallback so a read failure degrades the page
+// rather than crashing it.
+function logIfError(where: string, error: { message: string; code?: string } | null) {
+  if (error) console.error(`[podium] ${where} failed: ${error.code ?? "?"} ${error.message}`);
+}
+
 // Read through the service-role client: the share card route is public, so it
 // has no authenticated session to satisfy the RLS policy with.
 // cache() dedupes between generateMetadata and the page body on the same request.
 export const getFinalStandings = cache(async (): Promise<FinalStanding[]> => {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("final_standings")
     .select(STANDING_COLUMNS)
     .order("rank", { ascending: true });
+  logIfError("getFinalStandings", error);
   return data ?? [];
 });
 
 export const getStandingBySlug = cache(async (slug: string): Promise<FinalStanding | null> => {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("final_standings")
     .select(STANDING_COLUMNS)
     .eq("share_slug", slug)
     .maybeSingle();
+  logIfError("getStandingBySlug", error);
   return data ?? null;
 });
 
 export const getStandingByUserId = cache(async (userId: string): Promise<FinalStanding | null> => {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("final_standings")
     .select(STANDING_COLUMNS)
     .eq("user_id", userId)
     .maybeSingle();
+  logIfError("getStandingByUserId", error);
   return data ?? null;
 });
 
@@ -76,20 +88,22 @@ export const getStandingByUserId = cache(async (userId: string): Promise<FinalSt
 // would flash an incomplete podium during that window.
 export const isEventFinished = cache(async (): Promise<boolean> => {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("app_config")
     .select("value_int")
     .eq("key", "event_finished")
     .maybeSingle();
+  logIfError("isEventFinished", error);
   return (data?.value_int ?? 0) === 1;
 });
 
 export const getRecap = cache(async (): Promise<RecapStat[]> => {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("final_recap")
     .select("stat, headline, subject, detail")
     .order("sort_order", { ascending: true });
+  logIfError("getRecap", error);
   return data ?? [];
 });
 
