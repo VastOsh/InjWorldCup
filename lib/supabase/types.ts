@@ -107,6 +107,58 @@ export type Database = {
         Update: { value_int?: number | null };
         Relationships: [];
       };
+      final_standings: {
+        Row: {
+          rank: number;
+          user_id: string;
+          username: string;
+          avatar_url: string | null;
+          country: string | null;
+          total_points: number;
+          exact_count: number;
+          played_count: number;
+          best_points: number;
+          best_match_id: number | null;
+          best_label: string | null;
+          share_slug: string;
+          frozen_at: string;
+        };
+        Insert: {
+          rank: number;
+          user_id: string;
+          username: string;
+          avatar_url?: string | null;
+          country?: string | null;
+          total_points: number;
+          exact_count?: number;
+          played_count?: number;
+          best_points?: number;
+          best_match_id?: number | null;
+          best_label?: string | null;
+          share_slug: string;
+          frozen_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      final_recap: {
+        Row: {
+          stat: string;
+          headline: string;
+          subject: string | null;
+          detail: string | null;
+          sort_order: number;
+        };
+        Insert: {
+          stat: string;
+          headline: string;
+          subject?: string | null;
+          detail?: string | null;
+          sort_order?: number;
+        };
+        Update: never;
+        Relationships: [];
+      };
       predictions: {
         Row: {
           id: string;

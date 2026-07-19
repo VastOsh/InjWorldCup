@@ -6,7 +6,7 @@ import MobileNav from "@/app/components/MobileNav";
 type Props = {
   userId: string;
   walletAddress: string | null;
-  activePath: "/" | "/leaderboard" | "/groups" | "/knockout" | "/profile";
+  activePath: "/" | "/leaderboard" | "/groups" | "/knockout" | "/profile" | "/podium";
   avatarUrl?: string | null;
   username?: string | null;
 };

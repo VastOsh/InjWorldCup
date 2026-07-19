@@ -11,7 +11,7 @@ const NAV_LINKS = [
   { href: "/profile",     label: "Profile" },
 ] as const;
 
-type ActivePath = "/" | "/leaderboard" | "/groups" | "/knockout" | "/profile";
+type ActivePath = "/" | "/leaderboard" | "/groups" | "/knockout" | "/profile" | "/podium";
 
 export default function MobileNav({
   userId,

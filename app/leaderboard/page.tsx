@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import NavBar from "@/app/components/NavBar";
 import Leaderboard from "@/app/components/Leaderboard";
 import { COUNTRIES } from "@/lib/countries";
+import { isEventFinished } from "@/lib/podium";
 
 export default async function LeaderboardPage() {
   const supabase = await createClient();
@@ -24,6 +26,7 @@ export default async function LeaderboardPage() {
 
   const tiebreakerActual = actualConfig?.value_int ?? null;
   const tiebreakerVisible = (visibleConfig?.value_int ?? 0) === 1;
+  const finished = await isEventFinished();
 
   const countryMap = new Map<string, { total_points: number; player_count: number }>();
   for (const p of allForCountries ?? []) {
@@ -46,6 +49,21 @@ export default async function LeaderboardPage() {
       <NavBar userId={user.id} walletAddress={profile?.wallet_address ?? null} activePath="/leaderboard" avatarUrl={profile?.avatar_url} username={profile?.username} />
 
       <div className="mx-auto max-w-2xl px-4 py-8 flex flex-col gap-6">
+
+        {finished && (
+          <Link
+            href="/podium"
+            className="border-2 border-ink shadow-brutal bg-ink text-parchment px-4 py-3 flex items-center justify-between gap-3 hover:brightness-125 transition-[filter]"
+          >
+            <div>
+              <p className="font-mono text-[10px] tracking-widest uppercase text-parchment/60">
+                The tournament is over
+              </p>
+              <p className="font-bold text-sm">See the final podium & your result card</p>
+            </div>
+            <span className="font-mono text-lg flex-shrink-0">→</span>
+          </Link>
+        )}
 
         <div className="flex items-end justify-between">
           <h1 className="font-black text-2xl tracking-tight">Leaderboard</h1>
