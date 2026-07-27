@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { refreshCoaStatus } from "@/app/actions/coa";
 
 declare global {
   interface Window {
@@ -21,6 +22,7 @@ type Status = "idle" | "signing" | "linking" | "done" | "error";
 export default function WalletLink({ userId, currentWallet }: { userId: string; currentWallet: string | null }) {
   const [status, setStatus] = useState<Status>("idle");
   const [linked, setLinked] = useState(currentWallet);
+  const [coaHolder, setCoaHolder] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleLink() {
@@ -50,6 +52,11 @@ export default function WalletLink({ userId, currentWallet }: { userId: string; 
       if (!res.ok) throw new Error(data.error ?? "Link failed");
       setLinked(data.wallet_address);
       setStatus("done");
+      // Best-effort: reflect Cult of Anons season-pass status. Never blocks or
+      // fails the link — an errored check just leaves the marker off.
+      refreshCoaStatus()
+        .then((r) => setCoaHolder(r.holds === true))
+        .catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
       setStatus("error");
@@ -63,6 +70,11 @@ export default function WalletLink({ userId, currentWallet }: { userId: string; 
         <span className="font-mono text-[11px] text-ink">
           {linked.slice(0, 8)}…{linked.slice(-4)}
         </span>
+        {coaHolder && (
+          <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-accent">
+            ✦ CoA
+          </span>
+        )}
       </div>
     );
   }
