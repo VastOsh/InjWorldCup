@@ -42,6 +42,12 @@ supabase/.temp/
 .agents/
 skills-lock.json
 
+# dev-only market / pre-mainnet helpers (throwaway; connection details, testnet keys)
+/.devmkt/
+/scripts/devpsql.sh
+/scripts/devmoney.mjs
+/scripts/devgen-wallets.mjs
+
 # vercel
 .vercel
 

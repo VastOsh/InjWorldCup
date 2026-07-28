@@ -249,6 +249,7 @@ export type Database = {
           locks_at: string;
           winning_outcome: MarketOutcome | null;
           settled_at: string | null;
+          paused_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -259,6 +260,7 @@ export type Database = {
           locks_at: string;
           winning_outcome?: MarketOutcome | null;
           settled_at?: string | null;
+          paused_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -357,6 +359,29 @@ export type Database = {
         };
         Relationships: [];
       };
+      reserve_snapshots: {
+        Row: {
+          id: number;
+          denom: string;
+          reserves: string;
+          liabilities: string;
+          surplus: string;
+          solvent: boolean;
+          checked_at: string;
+        };
+        Insert: {
+          denom: string;
+          reserves: string | number;
+          liabilities: string | number;
+          surplus: string | number;
+          solvent: boolean;
+          checked_at?: string;
+        };
+        Update: {
+          solvent?: boolean;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       group_standings: {
@@ -371,6 +396,20 @@ export type Database = {
           ga: number;
           gd: number;
           pts: number;
+        };
+        Relationships: [];
+      };
+      // Ops-only (service role): per-denom liabilities rollup for solvency.
+      market_liabilities: {
+        Row: {
+          denom: string;
+          liabilities: string;
+          deposits: string;
+          withdrawn: string;
+          refunded: string;
+          staked: string;
+          paid_out: string;
+          holders: number;
         };
         Relationships: [];
       };
@@ -400,6 +439,26 @@ export type Database = {
       // Service-role only: refund a failed withdrawal reservation.
       fail_withdrawal: {
         Args: { p_id: number };
+        Returns: Json;
+      };
+      // Service-role only: record a solvency reconciliation from a fed-in on-chain
+      // reserve. Returns { snapshot_id, denom, reserves, liabilities, surplus, solvent }.
+      record_reserve_snapshot: {
+        Args: { p_denom: string; p_reserves: string | number };
+        Returns: Json;
+      };
+      // Service-role only: halt / resume new bets on a market (settlement unaffected).
+      pause_market: {
+        Args: { p_market_id: number };
+        Returns: Json;
+      };
+      resume_market: {
+        Args: { p_market_id: number };
+        Returns: Json;
+      };
+      // Service-role only: void a market and refund every stake (idempotent).
+      cancel_market: {
+        Args: { p_market_id: number };
         Returns: Json;
       };
     };
