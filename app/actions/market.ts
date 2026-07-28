@@ -14,7 +14,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyDeposit } from "@/lib/market/deposits";
-import { broadcastPayout } from "@/lib/market/payout";
+import { broadcastPayout, payoutMemo } from "@/lib/market/payout";
 import { marketDenom } from "@/lib/market/config";
 import { toAtomic } from "@/lib/market/format";
 import type { MarketOutcome } from "@/lib/supabase/types";
@@ -118,6 +118,9 @@ export interface WithdrawResult {
   amount?: string;
   denom?: string;
   error?: string;
+  /** The reservation is held and a payout may be in flight; the reconcile job
+   *  will confirm it on-chain or refund it. Funds are NOT lost. */
+  pending?: boolean;
 }
 
 /**
@@ -159,17 +162,32 @@ export async function withdraw(amountHuman: string): Promise<WithdrawResult> {
   const withdrawalId = (reserved as { withdrawal_id?: number } | null)?.withdrawal_id;
   if (!withdrawalId) return { ok: false, error: "Failed to open withdrawal" };
 
-  // 2) Broadcast from the market wallet, then confirm or refund via service role.
+  // 2) Broadcast from the market wallet, tagged with this withdrawal's memo so
+  //    it can always be found again on-chain, then resolve via the service role.
   const admin = createAdminClient();
-  const payout = await broadcastPayout(wallet, denom, atomic);
+  const payout = await broadcastPayout(wallet, denom, atomic, payoutMemo(withdrawalId));
 
-  if (!payout.ok) {
+  if (payout.ok) {
+    await admin.rpc("mark_withdrawal_sent", { p_id: withdrawalId, p_tx_hash: payout.txHash ?? "" });
+    revalidatePath("/market");
+    return { ok: true, txHash: payout.txHash, amount: atomic, denom };
+  }
+
+  // Refund NOW only if the send definitely never reached the chain. If the
+  // broadcast was ambiguous (it may have landed), leave the reservation pending
+  // — the reconcile job checks the chain by memo and resolves it exactly once.
+  // Refunding here would risk paying the user twice.
+  if (payout.submitted === false) {
     await admin.rpc("fail_withdrawal", { p_id: withdrawalId });
     revalidatePath("/market");
     return { ok: false, error: payout.error ?? "Broadcast failed" };
   }
 
-  await admin.rpc("mark_withdrawal_sent", { p_id: withdrawalId, p_tx_hash: payout.txHash ?? "" });
   revalidatePath("/market");
-  return { ok: true, txHash: payout.txHash, amount: atomic, denom };
+  return {
+    ok: false,
+    pending: true,
+    error: (payout.error ?? "Broadcast could not be confirmed") +
+      " — your withdrawal is pending and will be confirmed or refunded automatically.",
+  };
 }

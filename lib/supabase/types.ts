@@ -461,6 +461,19 @@ export type Database = {
         Args: { p_market_id: number };
         Returns: Json;
       };
+      // Service-role only: withdrawals pending longer than p_min_age (an INTERVAL
+      // string, e.g. '2 minutes'), for the reconcile job to resolve on-chain.
+      list_stuck_withdrawals: {
+        Args: { p_min_age?: string };
+        Returns: {
+          id: number;
+          user_id: string;
+          denom: string;
+          amount: string;
+          to_address: string;
+          created_at: string;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

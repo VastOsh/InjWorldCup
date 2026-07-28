@@ -47,6 +47,7 @@ skills-lock.json
 /scripts/devpsql.sh
 /scripts/devmoney.mjs
 /scripts/devgen-wallets.mjs
+/scripts/devreconcile.mjs
 
 # vercel
 .vercel
