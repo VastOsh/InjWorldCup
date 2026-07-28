@@ -56,3 +56,14 @@ export function marketWallet(): string {
   if (!addr) throw new Error("MARKET_WALLET_ADDRESS is not configured");
   return addr;
 }
+
+/**
+ * Explorer base for a broadcast tx, network-aware (mirrors the payout signer's
+ * MARKET_NETWORK). Append `/<txHash>` for a deep link. Server-derived because
+ * MARKET_NETWORK is not a public env var.
+ */
+export function marketExplorerTxBase(): string {
+  return process.env.MARKET_NETWORK === "mainnet"
+    ? "https://explorer.injective.network/transaction"
+    : "https://testnet.explorer.injective.network/transaction";
+}

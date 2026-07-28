@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import WalletLink from "@/app/components/WalletLink";
 import { loadMarketBoard, type MarketVM } from "@/lib/market/read";
-import { marketWallet } from "@/lib/market/config";
+import { marketWallet, marketExplorerTxBase } from "@/lib/market/config";
 import Cashier from "./Cashier";
 import MarketCard from "./MarketCard";
 
@@ -71,6 +71,7 @@ export default async function MarketPage() {
           balance={board.balance}
           marketWallet={wallet}
           walletLinked={!!profile?.wallet_address}
+          explorerTxBase={marketExplorerTxBase()}
         />
 
         {board.markets.length === 0 ? (

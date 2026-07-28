@@ -13,11 +13,13 @@ export default function Cashier({
   balance,
   marketWallet,
   walletLinked,
+  explorerTxBase,
 }: {
   denom: MarketDenom;
   balance: string;
   marketWallet: string | null;
   walletLinked: boolean;
+  explorerTxBase: string;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"deposit" | "withdraw">("deposit");
@@ -25,12 +27,26 @@ export default function Cashier({
   const [txHash, setTxHash] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState<Note>(null);
+  const [lastTx, setLastTx] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const bal = BigInt(balance);
+
+  async function copyTx() {
+    if (!lastTx) return;
+    try {
+      await navigator.clipboard.writeText(lastTx);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked — the hash stays visible to select manually */
+    }
+  }
 
   function doDeposit() {
     if (!txHash.trim()) return;
     setNote(null);
+    setLastTx(null);
     start(async () => {
       const r = await claimDeposit(txHash.trim());
       if (r.ok) {
@@ -51,10 +67,12 @@ export default function Cashier({
   function doWithdraw() {
     if (!amount.trim()) return;
     setNote(null);
+    setLastTx(null);
     start(async () => {
       const r = await withdraw(amount.trim());
       if (r.ok) {
-        setNote({ kind: "ok", text: `Sent. tx ${r.txHash?.slice(0, 10)}…` });
+        setNote({ kind: "ok", text: "Sent." });
+        setLastTx(r.txHash ?? null);
         setAmount("");
         router.refresh();
       } else {
@@ -79,7 +97,7 @@ export default function Cashier({
             <button
               key={t}
               type="button"
-              onClick={() => { setTab(t); setNote(null); }}
+              onClick={() => { setTab(t); setNote(null); setLastTx(null); }}
               className={`border-2 border-ink px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${
                 tab === t ? "bg-ink text-parchment" : "hover:bg-accent-soft"
               } ${t === "withdraw" ? "border-l-0" : ""}`}
@@ -161,6 +179,32 @@ export default function Cashier({
         >
           {note.text}
         </p>
+      )}
+
+      {lastTx && (
+        <div className="px-4 py-2 border-t-2 border-ink flex items-center gap-2">
+          <code
+            className="flex-1 font-mono text-[11px] break-all text-ink-muted"
+            title={lastTx}
+          >
+            {lastTx.slice(0, 10)}…{lastTx.slice(-8)}
+          </code>
+          <button
+            type="button"
+            onClick={copyTx}
+            className="border-2 border-ink px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide hover:bg-ink hover:text-parchment transition-colors"
+          >
+            {copied ? "Copied" : "Copy TX"}
+          </button>
+          <a
+            href={`${explorerTxBase}/${lastTx}`}
+            target="_blank"
+            rel="noreferrer"
+            className="border-2 border-ink px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide hover:bg-ink hover:text-parchment transition-colors"
+          >
+            View
+          </a>
+        </div>
       )}
     </div>
   );
