@@ -1,31 +1,30 @@
 // =============================================================================
-// Payout broadcaster — sign and send a bank transfer from the market hot wallet.
+// Payout — sign and broadcast a bank transfer from the market wallet.
 //
-// This is the ONLY place a private key is used. It signs a Cosmos bank MsgSend
-// on Injective (ethsecp256k1, via @injectivelabs/sdk-ts) from the custodial
-// market wallet to a player's inj1 address. Used for both withdrawal cash-outs
-// and — later — automated payouts if desired.
-//
-// TESTNET ONLY for now: the signer key lives in env and the network defaults to
-// testnet. Never point this at mainnet without a hardware/KMS signer.
-//
-// The heavy SDK is imported dynamically so it never enters the build graph of
-// routes that don't broadcast. Types stay loose (inferred) for the same reason.
+// This is the ONLY place funds leave custody. It keeps the SIGNER-AGNOSTIC
+// engine concerns here and delegates the actual signing to a MarketSigner
+// (lib/market/signer.ts), so the mainnet KMS/HSM signer drops in via env with
+// no change to this file or its callers:
+//   - validate destination + amount,
+//   - assert the configured signer controls exactly MARKET_WALLET_ADDRESS
+//     (never sign from an unexpected key),
+//   - tag the send with the withdrawal memo,
+//   - surface the exactly-once `submitted` flag for the caller's refund decision.
 // =============================================================================
 
 import { marketWallet } from "./config";
+import { getMarketSigner } from "./signer";
 
 export interface PayoutResult {
   ok: boolean;
   txHash?: string;
   error?: string;
   /**
-   * Whether the tx may have reached the chain. CRITICAL for exactly-once:
-   *  - false → the send was rejected BEFORE broadcast (bad input, signer config,
-   *    or an on-chain atomic failure that moved no funds). Safe to refund now.
-   *  - true  → the broadcast threw AFTER submission was possible (network/timeout).
-   *    The payout might have landed — DO NOT refund; let the reconcile job check
-   *    the chain by memo and resolve it exactly once.
+   * Whether the tx may have reached the chain (exactly-once critical):
+   *  - false → rejected before broadcast, or an on-chain atomic failure that
+   *    moved no funds → safe to refund now.
+   *  - true  → the broadcast was ambiguous (network/timeout); the payout might
+   *    have landed → DO NOT refund; let the reconcile job resolve it by memo.
    */
   submitted: boolean;
 }
@@ -62,49 +61,19 @@ export async function broadcastPayout(
     return { ok: false, submitted: false, error: (e as Error).message };
   }
 
-  const mnemonic = process.env.MARKET_WALLET_MNEMONIC?.trim();
-  const pkHex = process.env.MARKET_WALLET_PK?.trim();
-  if (!mnemonic && !pkHex) {
-    return { ok: false, submitted: false, error: "Market signer not configured (MARKET_WALLET_MNEMONIC or MARKET_WALLET_PK)" };
-  }
+  const signer = getMarketSigner();
 
-  let broadcasting = false;
+  // The configured signer must control exactly the custodial wallet — this
+  // guard is signer-agnostic and protects env-key and KMS alike.
+  let from: string;
   try {
-    const { MsgSend, PrivateKey, MsgBroadcasterWithPk } = await import("@injectivelabs/sdk-ts");
-    const { Network } = await import("@injectivelabs/networks");
-
-    const key = mnemonic
-      ? PrivateKey.fromMnemonic(mnemonic)
-      : PrivateKey.fromHex(pkHex as string);
-    const from = key.toBech32();
-
-    // Never sign from an unexpected key: the derived signer must be exactly the
-    // wallet deposits were sent to and balances are custodied in.
-    if (from !== expectedWallet) {
-      return { ok: false, submitted: false, error: "Configured signer does not match MARKET_WALLET_ADDRESS" };
-    }
-
-    const network = process.env.MARKET_NETWORK === "mainnet" ? Network.Mainnet : Network.Testnet;
-    const msg = MsgSend.fromJSON({
-      amount: { denom, amount },
-      srcInjectiveAddress: from,
-      dstInjectiveAddress: to,
-    });
-
-    const broadcaster = new MsgBroadcasterWithPk({ network, privateKey: key });
-    // From here a throw is ambiguous — the tx may already be in the mempool.
-    broadcasting = true;
-    const res = await broadcaster.broadcast({ msgs: msg, memo });
-
-    // A non-zero code = the tx was included but FAILED atomically → no funds
-    // moved → safe to refund (submitted:false for the caller's purposes).
-    if (res.code !== 0) {
-      return { ok: false, submitted: false, error: res.rawLog || `Transaction failed (code ${res.code})` };
-    }
-    return { ok: true, submitted: true, txHash: res.txHash };
+    from = await signer.getAddress();
   } catch (e) {
-    // Ambiguous once broadcasting started: might have landed. Leave it to the
-    // reconcile job to check the chain by memo rather than risk a double-spend.
-    return { ok: false, submitted: broadcasting, error: (e as Error).message };
+    return { ok: false, submitted: false, error: (e as Error).message };
   }
+  if (from !== expectedWallet) {
+    return { ok: false, submitted: false, error: "Configured signer does not match MARKET_WALLET_ADDRESS" };
+  }
+
+  return signer.send(to, denom, amount, memo);
 }
