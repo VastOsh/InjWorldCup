@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import WalletSignIn from "@/app/auth/WalletSignIn";
 
 function ErrorBanner() {
   const params = useSearchParams();
@@ -88,6 +89,21 @@ export default function LoginPage() {
           </svg>
           Sign in with Discord
         </motion.a>
+
+        {/* Divider */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.3 }}
+          className="flex items-center gap-3 w-full max-w-[260px]"
+        >
+          <span className="h-px flex-1 bg-white/15" />
+          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-white/30">or</span>
+          <span className="h-px flex-1 bg-white/15" />
+        </motion.div>
+
+        {/* Wallet sign-in */}
+        <WalletSignIn />
       </motion.div>
 
       {/* Bottom rule */}

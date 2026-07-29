@@ -382,6 +382,26 @@ export type Database = {
         };
         Relationships: [];
       };
+      // Single-use, short-lived wallet sign-in nonces (service role only).
+      wallet_auth_challenges: {
+        Row: {
+          wallet: string;
+          nonce: string;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          wallet: string;
+          nonce: string;
+          expires_at: string;
+          created_at?: string;
+        };
+        Update: {
+          nonce?: string;
+          expires_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       group_standings: {
