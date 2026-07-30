@@ -1,11 +1,15 @@
 // POST /auth/wallet   { signer, signature, pubKey }
 //
 // Wallet sign-in. Verifies an ADR-036 signature over the single-use challenge,
-// resolves it to ONE canonical account (existing wallet-native profile, or a
-// freshly admin-created one), and mints a real refreshable GoTrue session via a
-// one-time OTP. Never splits balances: the wallet_address UNIQUE constraint
-// guarantees a wallet maps to at most one account, and a wallet already linked
-// to a Discord account is routed back to Discord (full merge is a v2 follow-up).
+// resolves it to ONE canonical account (existing wallet-native profile, a
+// Discord account that linked this wallet, or a freshly admin-created one), and
+// mints a real refreshable GoTrue session via a one-time OTP. Never splits
+// balances: the wallet_address UNIQUE constraint guarantees a wallet maps to at
+// most one account, so signing in with a wallet always lands on that one account
+// — including one that also has a Discord identity (dual-auth merge). For a
+// Discord-origin account (its email was nulled at signup) we lazily assign the
+// synthesized <wallet>@wallet.invalid OTP handle on first wallet sign-in; the
+// account is thereafter reachable by EITHER Discord or wallet, same balance.
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -69,15 +73,26 @@ export async function POST(request: NextRequest) {
   if (profile) {
     const { data: userRes } = await admin.auth.admin.getUserById(profile.id);
     const existingEmail = userRes?.user?.email ?? null;
-    if (!existingEmail) {
-      // Wallet is attached to a Discord-origin account (its email was nulled),
-      // so there is no OTP handle to mint against. Route to Discord for v1.
-      return NextResponse.json(
-        { error: "This wallet is linked to a Discord account. Please sign in with Discord." },
-        { status: 409 },
-      );
+    if (existingEmail) {
+      // Wallet-native account (or a previously-merged Discord account): the OTP
+      // handle is already in place.
+      email = existingEmail;
+    } else {
+      // Discord-origin account that linked this wallet — its real email was
+      // nulled at signup, so it has no OTP handle yet. Assign the synthesized
+      // <wallet>@wallet.invalid handle (never a real email — Discord uses
+      // scope:identify and sends none, so nothing is leaked) and mint against
+      // it. This is the wallet↔Discord merge: same auth user, same balance,
+      // now reachable by either identity. Idempotent on later sign-ins.
+      email = walletEmail(signer);
+      const { error: setErr } = await admin.auth.admin.updateUserById(profile.id, {
+        email,
+        email_confirm: true,
+      });
+      if (setErr) {
+        return NextResponse.json({ error: "Could not prepare session" }, { status: 500 });
+      }
     }
-    email = existingEmail;
   } else {
     email = walletEmail(signer);
     const { error: createErr } = await admin.auth.admin.createUser({
