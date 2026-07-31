@@ -142,12 +142,37 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  // Refuse if this wallet already backs a DIFFERENT account — linking it here
+  // would split one person's custodial balance across two accounts. (A wallet
+  // that already signs in on its own is reached via wallet sign-in; full
+  // account-merge is a planned v2 follow-up.)
+  const { data: owner } = await adminClient
+    .from("profiles")
+    .select("id")
+    .eq("wallet_address", signer)
+    .maybeSingle();
+  if (owner && owner.id !== user.id) {
+    return json({
+      error: "This wallet already has its own account. Sign in with the wallet instead, or link a different wallet.",
+    }, 409);
+  }
+
   const { error: dbErr } = await adminClient
     .from("profiles")
     .update({ wallet_address: signer })
     .eq("id", user.id);
 
-  if (dbErr) return json({ error: "Failed to save wallet", detail: dbErr.message, code: dbErr.code }, 500);
+  if (dbErr) {
+    // Unique-violation race: someone claimed this wallet between the check and
+    // the write. Same guidance as the pre-check.
+    if (dbErr.code === "23505") {
+      return json({
+        error: "This wallet already has its own account. Sign in with the wallet instead, or link a different wallet.",
+      }, 409);
+    }
+    return json({ error: "Failed to save wallet", detail: dbErr.message, code: dbErr.code }, 500);
+  }
 
   return json({ ok: true, wallet_address: signer, matched: matchedName });
 });
