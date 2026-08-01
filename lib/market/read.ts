@@ -27,8 +27,12 @@ export interface MarketVM {
   /** Server-computed: no more betting (past lock time or not open). */
   locked: boolean;
   winningOutcome: MarketOutcome | null;
+  /** False for head-to-head markets (no draw) — the UI hides the draw outcome. */
+  hasDraw: boolean;
   teamHome: string;
   teamAway: string;
+  category: string;
+  league: string | null;
   matchStatus: MatchStatus;
   scoreHome: number | null;
   scoreAway: number | null;
@@ -55,7 +59,7 @@ export async function loadMarketBoard(supabase: Client, userId: string | null): 
   const { data: markets } = await supabase
     .from("markets")
     .select(
-      "id, fee_bps, status, locks_at, winning_outcome, matches!inner(team_home, team_away, status, score_home, score_away)",
+      "id, fee_bps, status, locks_at, winning_outcome, has_draw, matches!inner(team_home, team_away, status, score_home, score_away, category, league)",
     )
     .eq("denom", denom.denom)
     .in("status", ["open", "locked", "settled"])
@@ -101,6 +105,7 @@ export async function loadMarketBoard(supabase: Client, userId: string | null): 
     const match = m.matches as unknown as {
       team_home: string; team_away: string; status: MatchStatus;
       score_home: number | null; score_away: number | null;
+      category: string; league: string | null;
     };
     const mine = mineByMarket.get(m.id) ?? zeroBy(BigInt(0));
     const myStakesStr = zeroBy("0");
@@ -112,8 +117,11 @@ export async function loadMarketBoard(supabase: Client, userId: string | null): 
       locksAt: m.locks_at,
       locked: m.status !== "open" || Date.now() >= new Date(m.locks_at).getTime(),
       winningOutcome: m.winning_outcome,
+      hasDraw: m.has_draw,
       teamHome: match.team_home,
       teamAway: match.team_away,
+      category: match.category,
+      league: match.league,
       matchStatus: match.status,
       scoreHome: match.score_home,
       scoreAway: match.score_away,

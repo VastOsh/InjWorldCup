@@ -37,6 +37,19 @@ export async function placeStake(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Unauthorized" };
 
+  // Head-to-head markets have no draw. The DB trigger is the hard guard; this is
+  // a friendly early-out so the user gets a clear message instead of a raw 23514.
+  if (outcome === "draw") {
+    const { data: mkt } = await supabase
+      .from("markets")
+      .select("has_draw")
+      .eq("id", marketId)
+      .single();
+    if (mkt && mkt.has_draw === false) {
+      return { ok: false, error: "This market has no draw outcome." };
+    }
+  }
+
   const { decimals } = marketDenom();
   let atomic: string;
   try {

@@ -68,6 +68,8 @@ export type Database = {
           advance_winner: "home" | "away" | null;
           pen_home: number | null;
           pen_away: number | null;
+          category: string;
+          league: string | null;
         };
         Insert: {
           id: number;
@@ -86,6 +88,8 @@ export type Database = {
           advance_winner?: "home" | "away" | null;
           pen_home?: number | null;
           pen_away?: number | null;
+          category?: string;
+          league?: string | null;
         };
         Update: {
           team_home?: string;
@@ -251,6 +255,7 @@ export type Database = {
           settled_at: string | null;
           paused_at: string | null;
           created_at: string;
+          has_draw: boolean;
         };
         Insert: {
           match_id: number;
@@ -262,6 +267,7 @@ export type Database = {
           settled_at?: string | null;
           paused_at?: string | null;
           created_at?: string;
+          has_draw?: boolean;
         };
         Update: {
           denom?: string;
