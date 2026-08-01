@@ -47,7 +47,7 @@ export default async function MarketPage() {
     list.length > 0 && (
       <section className="flex flex-col gap-3">
         <h2 className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">{title}</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 lg:grid-cols-2">
           {list.map((m) => (
             <MarketCard
               key={m.id}
