@@ -96,8 +96,8 @@ export default async function MarketPage() {
       </header>
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 flex flex-col gap-8">
-        <div className="flex flex-col gap-6 max-w-md">
-          <div>
+        <div className="mx-auto w-full max-w-md flex flex-col gap-6">
+          <div className="text-center">
             <h1 className="font-black text-3xl tracking-tight">Parimutuel Market</h1>
             <p className="font-mono text-[11px] text-white/50 mt-1.5">
               Back an outcome — winners split the pot. {board.denom.symbol}.

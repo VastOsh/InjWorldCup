@@ -164,8 +164,8 @@ export default function MarketCard({
               type="button"
               disabled={locked}
               onClick={() => setPick(isPick ? null : o)}
-              className={`flex items-center gap-2.5 rounded-xl -mx-2 px-2 py-2 text-left transition-colors ${
-                isPick ? "bg-inj/15" : locked ? "cursor-default" : "hover:bg-white/[0.05]"
+              className={`group flex items-center gap-2.5 rounded-xl -mx-2 px-2 py-2 text-left transition-colors ${
+                isPick ? "bg-inj/15" : locked ? "cursor-default" : "cursor-pointer hover:bg-white/[0.05]"
               }`}
             >
               {flagByOutcome[o] ? (
@@ -196,14 +196,16 @@ export default function MarketCard({
                 </div>
               </div>
               <span
-                className={`shrink-0 rounded-full border px-3 py-1.5 font-mono text-sm font-bold tabular ${
+                className={`shrink-0 rounded-full border px-3 py-1.5 font-mono text-sm font-bold tabular transition-colors ${
                   isPick
                     ? "border-inj bg-inj text-white"
                     : isWinner
                       ? "border-open/40 bg-open/10 text-open"
-                      : isFav
-                        ? "border-inj/50 bg-inj/10 text-white"
-                        : "border-white/15 text-white/70"
+                      : locked
+                        ? "border-white/15 text-white/70"
+                        : isFav
+                          ? "border-inj/50 bg-inj/10 text-white group-hover:bg-inj group-hover:border-inj"
+                          : "border-white/15 text-white/70 group-hover:border-inj group-hover:bg-inj group-hover:text-white"
                 }`}
               >
                 {pct}%
@@ -212,6 +214,13 @@ export default function MarketCard({
           );
         })}
       </div>
+
+      {/* Nudge: make the tap-to-bet interaction discoverable. */}
+      {connected && !locked && !pick && (
+        <p className="font-mono text-[10px] text-inj-soft text-center -mt-1">
+          Tap a side above to place a bet
+        </p>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-2.5 border-t border-white/10 font-mono text-[10px] text-white/50">
