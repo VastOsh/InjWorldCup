@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { placeStake } from "@/app/actions/market";
 import { quotePayout, impliedProbabilities } from "@/lib/market/math";
 import { fromAtomic, toAtomic } from "@/lib/market/format";
+import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
 import type { MarketVM } from "@/lib/market/read";
 import type { MarketDenom } from "@/lib/market/config";
 import type { MarketOutcome } from "@/lib/supabase/types";
@@ -12,8 +14,28 @@ import type { MarketOutcome } from "@/lib/supabase/types";
 const OUTCOMES: readonly MarketOutcome[] = ["home", "draw", "away"];
 const ZERO = BigInt(0);
 
+// Team names on WC-style markets are countries → map to a flag (null otherwise,
+// so non-country markets simply render without one).
+const FLAG_CODE_BY_NAME = new Map(COUNTRIES.map((c) => [c.name, c.code] as const));
+function flagFor(team: string): string | null {
+  const code = FLAG_CODE_BY_NAME.get(team);
+  return code ? flagUrlByCode(code) : null;
+}
+
 function pools(m: MarketVM): Record<MarketOutcome, bigint> {
   return { home: BigInt(m.pools.home), draw: BigInt(m.pools.draw), away: BigInt(m.pools.away) };
+}
+
+function Flag({ src, size = 18 }: { src: string; size?: number }) {
+  return (
+    <Image
+      src={src}
+      alt=""
+      width={size}
+      height={Math.round((size * 3) / 4)}
+      className="shrink-0 border border-ink-faint"
+    />
+  );
 }
 
 export default function MarketCard({
@@ -48,6 +70,11 @@ export default function MarketCard({
     home: market.teamHome,
     draw: "Draw",
     away: market.teamAway,
+  };
+  const flagByOutcome: Record<MarketOutcome, string | null> = {
+    home: flagFor(market.teamHome),
+    draw: null,
+    away: flagFor(market.teamAway),
   };
 
   // Live payout quote for the current pick + amount.
@@ -96,8 +123,12 @@ export default function MarketCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-4 py-3 border-b-2 border-ink">
         <div className="min-w-0">
-          <p className="font-black text-base leading-tight truncate">
-            {market.teamHome} <span className="text-ink-muted font-bold">v</span> {market.teamAway}
+          <p className="font-black text-base leading-tight flex items-center gap-1.5 min-w-0">
+            {flagByOutcome.home && <Flag src={flagByOutcome.home} size={20} />}
+            <span className="truncate">{market.teamHome}</span>
+            <span className="text-ink-muted font-bold shrink-0">v</span>
+            {flagByOutcome.away && <Flag src={flagByOutcome.away} size={20} />}
+            <span className="truncate">{market.teamAway}</span>
           </p>
           <p className="font-mono text-[10px] text-ink-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span>{locksLabel}</span>
@@ -143,7 +174,10 @@ export default function MarketCard({
               }`}
             >
               <div className="flex items-center justify-between gap-1">
-                <span className="font-bold text-xs truncate">{label[o]}</span>
+                <span className="font-bold text-xs flex items-center gap-1.5 min-w-0">
+                  {flagByOutcome[o] && <Flag src={flagByOutcome[o]!} size={16} />}
+                  <span className="truncate">{label[o]}</span>
+                </span>
                 {isWinner ? (
                   <span className="shrink-0 font-mono text-[8px] font-bold uppercase tracking-wider text-open">Won</span>
                 ) : isFav && !isPick ? (
