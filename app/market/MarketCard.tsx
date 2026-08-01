@@ -10,6 +10,7 @@ import type { MarketDenom } from "@/lib/market/config";
 import type { MarketOutcome } from "@/lib/supabase/types";
 
 const OUTCOMES: readonly MarketOutcome[] = ["home", "draw", "away"];
+const ZERO = BigInt(0);
 
 function pools(m: MarketVM): Record<MarketOutcome, bigint> {
   return { home: BigInt(m.pools.home), draw: BigInt(m.pools.draw), away: BigInt(m.pools.away) };
@@ -38,6 +39,11 @@ export default function MarketCard({
   const settled = market.status === "settled";
   const bal = BigInt(balance);
 
+  const totalPool = p.home + p.draw + p.away;
+  const totalBets = market.stakeCounts.home + market.stakeCounts.draw + market.stakeCounts.away;
+  const favorite = OUTCOMES.reduce((a, b) => (prob[b] > prob[a] ? b : a), "home" as MarketOutcome);
+  const hasAction = totalPool > ZERO;
+
   const label: Record<MarketOutcome, string> = {
     home: market.teamHome,
     draw: "Draw",
@@ -51,7 +57,7 @@ export default function MarketCard({
     try {
       const atomic = toAtomic(amount.trim(), denom.decimals);
       if (atomic > bal) amountErr = "Exceeds balance";
-      else if (atomic <= BigInt(0)) amountErr = "Enter an amount";
+      else if (atomic <= ZERO) amountErr = "Enter an amount";
       else {
         const q = quotePayout(p, pick, atomic, market.feeBps);
         quoteText = `Win ≈ ${fromAtomic(q.gross, denom.decimals, 2)} ${denom.symbol}  ·  +${fromAtomic(q.profit, denom.decimals, 2)}`;
@@ -77,26 +83,34 @@ export default function MarketCard({
     });
   }
 
+  const locksLabel = settled
+    ? `Full time ${market.scoreHome}–${market.scoreAway}`
+    : locked
+      ? "Locked — awaiting result"
+      : `Locks ${new Date(market.locksAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ${new Date(
+          market.locksAt,
+        ).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
+
   return (
     <div className="border-2 border-ink shadow-brutal bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b-2 border-ink">
+      <div className="flex items-start justify-between gap-3 px-4 py-3 border-b-2 border-ink">
         <div className="min-w-0">
-          <p className="font-black text-sm truncate">
-            {market.teamHome} <span className="text-ink-muted">v</span> {market.teamAway}
+          <p className="font-black text-base leading-tight truncate">
+            {market.teamHome} <span className="text-ink-muted font-bold">v</span> {market.teamAway}
           </p>
-          {settled ? (
-            <p className="font-mono text-[11px] text-ink-muted mt-0.5">
-              Full time {market.scoreHome}–{market.scoreAway}
-            </p>
-          ) : (
-            <p className="font-mono text-[11px] text-ink-muted mt-0.5">
-              {locked ? "Locked" : `Locks ${new Date(market.locksAt).toLocaleString()}`}
-            </p>
-          )}
+          <p className="font-mono text-[10px] text-ink-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span>{locksLabel}</span>
+            <span aria-hidden className="text-ink-faint">•</span>
+            <span className="tabular">
+              {hasAction
+                ? `${fromAtomic(totalPool, denom.decimals, 1)} ${denom.symbol} pool · ${totalBets} ${totalBets === 1 ? "bet" : "bets"}`
+                : "No bets yet — be first"}
+            </span>
+          </p>
         </div>
         <span
-          className={`font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-1 border-2 border-ink whitespace-nowrap ${
+          className={`shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-1 border-2 border-ink whitespace-nowrap ${
             settled ? "bg-ink text-parchment" : locked ? "bg-live text-parchment" : "bg-open text-parchment"
           }`}
         >
@@ -109,16 +123,18 @@ export default function MarketCard({
         {OUTCOMES.map((o, i) => {
           const isPick = pick === o;
           const isWinner = settled && market.winningOutcome === o;
+          const isFav = hasAction && o === favorite;
           const mine = BigInt(market.myStakes[o]);
+          const pct = Math.round(prob[o] * 100);
           return (
             <button
               key={o}
               type="button"
               disabled={locked}
               onClick={() => setPick(isPick ? null : o)}
-              className={`flex flex-col gap-1 px-3 py-3 text-left transition-colors ${i < 2 ? "border-r-2 border-ink" : ""} ${
+              className={`flex flex-col gap-2 px-3 py-3 text-left transition-colors ${i < 2 ? "border-r-2 border-ink" : ""} ${
                 isWinner
-                  ? "bg-open/15"
+                  ? "bg-open/10"
                   : isPick
                     ? "bg-ink text-parchment"
                     : locked
@@ -126,14 +142,32 @@ export default function MarketCard({
                       : "hover:bg-accent-soft"
               }`}
             >
-              <span className="font-bold text-xs truncate">{label[o]}</span>
-              <span className={`font-mono text-lg font-black tabular leading-none ${isPick ? "text-parchment" : ""}`}>
-                {Math.round(prob[o] * 100)}%
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-bold text-xs truncate">{label[o]}</span>
+                {isWinner ? (
+                  <span className="shrink-0 font-mono text-[8px] font-bold uppercase tracking-wider text-open">Won</span>
+                ) : isFav && !isPick ? (
+                  <span className="shrink-0 font-mono text-[8px] font-bold uppercase tracking-wider text-accent">Fav</span>
+                ) : null}
+              </div>
+
+              <span className={`font-mono text-2xl font-black tabular leading-none ${isPick ? "text-parchment" : ""}`}>
+                {pct}
+                <span className="text-sm font-bold align-top">%</span>
               </span>
-              <span className={`font-mono text-[10px] ${isPick ? "text-parchment/70" : "text-ink-muted"}`}>
+
+              {/* implied-probability bar */}
+              <div className={`h-1.5 w-full ${isPick ? "bg-parchment/25" : "bg-ink-faint"}`}>
+                <div
+                  className={`h-full ${isPick ? "bg-parchment" : isWinner ? "bg-open" : isFav ? "bg-accent" : "bg-ink"}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+
+              <span className={`font-mono text-[10px] leading-tight ${isPick ? "text-parchment/70" : "text-ink-muted"}`}>
                 {fromAtomic(BigInt(market.pools[o]), denom.decimals, 1)} {denom.symbol}
-                {mine > BigInt(0) && (
-                  <span className={isWinner ? "text-open font-bold" : ""}>
+                {mine > ZERO && (
+                  <span className={isWinner ? "text-open font-bold" : isPick ? "text-parchment" : "text-ink font-bold"}>
                     {" · you "}
                     {fromAtomic(mine, denom.decimals, 2)}
                   </span>
