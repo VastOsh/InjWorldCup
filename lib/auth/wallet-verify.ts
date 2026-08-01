@@ -38,7 +38,7 @@ function b64Utf8(s: string): string {
  *  endpoints reconstruct byte-identical text. */
 export function buildLoginMessage(wallet: string, nonce: string): string {
   return [
-    "Sign in to InjWorldCup",
+    "Sign in to injcup",
     "",
     `Wallet: ${wallet}`,
     `Nonce: ${nonce}`,

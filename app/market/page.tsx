@@ -50,7 +50,7 @@ export default async function MarketPage() {
         <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link href="/" className="font-black text-sm tracking-[-0.02em] uppercase hover:text-accent transition-colors">
-              INJ<span className="text-accent">WC</span>
+              INJ<span className="text-accent">CUP</span>
             </Link>
             <span className="font-mono text-[10px] uppercase tracking-widest text-ink-muted">Market</span>
           </div>
