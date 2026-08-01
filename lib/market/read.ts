@@ -46,10 +46,12 @@ export interface MarketBoard {
   markets: MarketVM[];
 }
 
-export async function loadMarketBoard(supabase: Client, userId: string): Promise<MarketBoard> {
+export async function loadMarketBoard(supabase: Client, userId: string | null): Promise<MarketBoard> {
   const denom = marketDenom();
 
-  // Active + resolved markets (skip void), soonest lock first.
+  // Active + resolved markets (skip void), soonest lock first. Markets + pools
+  // are public; pass an admin client for a signed-out visitor so RLS doesn't
+  // hide the board. Balance + stakes are only fetched when a user is present.
   const { data: markets } = await supabase
     .from("markets")
     .select(
@@ -67,8 +69,10 @@ export async function loadMarketBoard(supabase: Client, userId: string): Promise
     ids.length
       ? supabase.from("market_pools").select("market_id, outcome, pool, stake_count").in("market_id", ids)
       : Promise.resolve({ data: [] as { market_id: number; outcome: MarketOutcome; pool: string; stake_count: number }[] }),
-    supabase.from("wallet_ledger").select("delta").eq("user_id", userId).eq("denom", denom.denom),
-    ids.length
+    userId
+      ? supabase.from("wallet_ledger").select("delta").eq("user_id", userId).eq("denom", denom.denom)
+      : Promise.resolve({ data: [] as { delta: string }[] }),
+    userId && ids.length
       ? supabase.from("stakes").select("market_id, outcome, amount").eq("user_id", userId).in("market_id", ids)
       : Promise.resolve({ data: [] as { market_id: number; outcome: MarketOutcome; amount: string }[] }),
   ]);

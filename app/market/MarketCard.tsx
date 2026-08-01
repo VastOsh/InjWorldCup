@@ -19,10 +19,12 @@ export default function MarketCard({
   market,
   denom,
   balance,
+  connected = true,
 }: {
   market: MarketVM;
   denom: MarketDenom;
   balance: string;
+  connected?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -142,8 +144,15 @@ export default function MarketCard({
         })}
       </div>
 
-      {/* Bet slip (only when open + an outcome is picked) */}
-      {!locked && pick && (
+      {/* Not connected: picking an outcome nudges the visitor to sign in. */}
+      {!locked && pick && !connected && (
+        <p className="px-4 py-3 border-t-2 border-ink font-mono text-[11px] text-ink-muted">
+          Connect your wallet above to place a bet.
+        </p>
+      )}
+
+      {/* Bet slip (only when open + connected + an outcome is picked) */}
+      {!locked && pick && connected && (
         <div className="px-4 py-3 border-t-2 border-ink flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <input
