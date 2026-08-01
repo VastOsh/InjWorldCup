@@ -111,6 +111,7 @@ export default async function MarketPage() {
               marketWallet={wallet}
               walletLinked={!!profile?.wallet_address}
               explorerTxBase={marketExplorerTxBase()}
+              network={process.env.MARKET_NETWORK === "mainnet" ? "mainnet" : "testnet"}
             />
           ) : (
             <div className="glass-panel rounded-3xl p-6 flex flex-col gap-3">

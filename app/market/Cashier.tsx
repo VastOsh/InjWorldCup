@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { claimDeposit, withdraw } from "@/app/actions/market";
-import { fromAtomic } from "@/lib/market/format";
+import { fromAtomic, toAtomic } from "@/lib/market/format";
 import type { MarketDenom } from "@/lib/market/config";
 
 type Note = { kind: "ok" | "err"; text: string } | null;
@@ -14,18 +14,22 @@ export default function Cashier({
   marketWallet,
   walletLinked,
   explorerTxBase,
+  network,
 }: {
   denom: MarketDenom;
   balance: string;
   marketWallet: string | null;
   walletLinked: boolean;
   explorerTxBase: string;
+  network: "mainnet" | "testnet";
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"deposit" | "withdraw">("deposit");
   const [pending, start] = useTransition();
   const [txHash, setTxHash] = useState("");
   const [amount, setAmount] = useState("");
+  const [depAmount, setDepAmount] = useState("");
+  const [showManual, setShowManual] = useState(false);
   const [note, setNote] = useState<Note>(null);
   const [lastTx, setLastTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -53,6 +57,60 @@ export default function Cashier({
     } catch {
       /* clipboard blocked — the address stays visible to select manually */
     }
+  }
+
+  // One-click: build + broadcast the transfer from the connected wallet, then
+  // credit via the same verified path a pasted hash uses.
+  function doWalletDeposit() {
+    const amt = depAmount.trim();
+    if (!amt || !marketWallet) return;
+    setNote(null);
+    setLastTx(null);
+    let atomic: string;
+    try {
+      atomic = toAtomic(amt, denom.decimals).toString();
+    } catch (e) {
+      setNote({ kind: "err", text: (e as Error).message });
+      return;
+    }
+    start(async () => {
+      let hash: string;
+      try {
+        const { depositViaWallet } = await import("@/lib/market/wallet-deposit");
+        hash = await depositViaWallet({
+          network,
+          chainDenom: denom.denom,
+          atomicAmount: atomic,
+          marketWallet,
+        });
+      } catch (e) {
+        setNote({ kind: "err", text: (e as Error).message || "Deposit cancelled." });
+        return;
+      }
+      setLastTx(hash);
+      // The tx needs a moment to index; claimDeposit treats "not found yet" as
+      // retriable, so poll a few times before falling back to the manual paste.
+      for (let i = 0; i < 6; i++) {
+        const r = await claimDeposit(hash);
+        if (r.ok) {
+          setNote(
+            r.credited
+              ? { kind: "ok", text: `Deposited ${fromAtomic(BigInt(r.amount ?? atomic), denom.decimals, 4)} ${denom.symbol}.` }
+              : { kind: "err", text: "Already credited." },
+          );
+          setDepAmount("");
+          router.refresh();
+          return;
+        }
+        if (r.rejected) {
+          setNote({ kind: "err", text: r.error ?? "Deposit could not be verified." });
+          return;
+        }
+        await new Promise((res) => setTimeout(res, 2500));
+      }
+      setNote({ kind: "err", text: "Sent — still confirming. Paste the hash below in a moment to credit." });
+      setShowManual(true);
+    });
   }
 
   function doDeposit() {
@@ -129,40 +187,73 @@ export default function Cashier({
           Link an Injective wallet to deposit or withdraw.
         </p>
       ) : tab === "deposit" ? (
-        <div className="px-4 py-3.5 flex flex-col gap-2.5">
+        <div className="px-4 py-3.5 flex flex-col gap-3">
           <p className="font-mono text-[11px] text-white/50 leading-relaxed">
-            Send {denom.symbol} to the market wallet, then paste the transaction hash to credit your balance.
+            Deposit {denom.symbol} straight from your wallet — approve the transfer in the popup and it credits automatically.
           </p>
-          {marketWallet && (
-            <div className="flex items-stretch gap-2">
-              <code className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 font-mono text-[11px] break-all text-white/80">
-                {marketWallet}
-              </code>
-              <button
-                type="button"
-                onClick={copyAddr}
-                className="shrink-0 rounded-full border border-white/15 px-3 font-mono text-[10px] font-bold uppercase tracking-wide text-white/80 hover:bg-white/10 transition-colors"
-              >
-                {copiedAddr ? "Copied" : "Copy"}
-              </button>
-            </div>
-          )}
           <div className="flex items-center gap-2">
             <input
-              value={txHash}
-              onChange={(e) => setTxHash(e.target.value)}
-              placeholder="Transaction hash"
-              className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 font-mono text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-inj focus:ring-2 focus:ring-inj/30 transition-colors"
+              inputMode="decimal"
+              value={depAmount}
+              onChange={(e) => setDepAmount(e.target.value)}
+              placeholder={`Amount (${denom.symbol})`}
+              className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 font-mono text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-inj focus:ring-2 focus:ring-inj/30 transition-colors"
             />
             <button
               type="button"
-              disabled={pending || !txHash.trim()}
-              onClick={doDeposit}
-              className="rounded-full bg-inj text-white px-4 py-2 font-bold text-sm uppercase shadow-lg shadow-inj/30 hover:bg-inj-soft disabled:opacity-40 disabled:hover:bg-inj transition-all"
+              disabled={pending || !depAmount.trim()}
+              onClick={doWalletDeposit}
+              className="rounded-full bg-inj text-white px-5 py-2 font-bold text-sm uppercase tracking-wide shadow-lg shadow-inj/30 hover:bg-inj-soft disabled:opacity-40 disabled:hover:bg-inj transition-all"
             >
-              {pending ? "…" : "Credit"}
+              {pending ? "…" : "Deposit"}
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowManual((s) => !s)}
+            className="self-start font-mono text-[10px] uppercase tracking-wide text-white/40 hover:text-white/70 transition-colors"
+          >
+            {showManual ? "Hide manual option" : "Prefer to send manually?"}
+          </button>
+
+          {showManual && (
+            <div className="flex flex-col gap-2.5 border-t border-white/10 pt-3">
+              <p className="font-mono text-[11px] text-white/50 leading-relaxed">
+                Send {denom.symbol} to the market wallet, then paste the transaction hash.
+              </p>
+              {marketWallet && (
+                <div className="flex items-stretch gap-2">
+                  <code className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 font-mono text-[11px] break-all text-white/80">
+                    {marketWallet}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={copyAddr}
+                    className="shrink-0 rounded-full border border-white/15 px-3 font-mono text-[10px] font-bold uppercase tracking-wide text-white/80 hover:bg-white/10 transition-colors"
+                  >
+                    {copiedAddr ? "Copied" : "Copy"}
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  value={txHash}
+                  onChange={(e) => setTxHash(e.target.value)}
+                  placeholder="Transaction hash"
+                  className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 font-mono text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-inj focus:ring-2 focus:ring-inj/30 transition-colors"
+                />
+                <button
+                  type="button"
+                  disabled={pending || !txHash.trim()}
+                  onClick={doDeposit}
+                  className="rounded-full border border-white/20 bg-white/10 text-white px-4 py-2 font-bold text-sm uppercase hover:bg-white/15 disabled:opacity-40 transition-colors"
+                >
+                  {pending ? "…" : "Credit"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="px-4 py-3.5 flex flex-col gap-2.5">
