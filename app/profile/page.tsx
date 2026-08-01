@@ -16,14 +16,18 @@ export default async function ProfilePage() {
     .single();
 
   return (
-    <main className="min-h-screen bg-parchment">
+    <main className="grain relative min-h-screen overflow-hidden bg-nightfall text-white">
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="aurora aurora-a" />
+      </div>
+
       <NavBar
         userId={user.id}
         walletAddress={profile?.wallet_address ?? null}
         activePath="/profile"
       />
 
-      <div className="mx-auto max-w-lg px-4 py-8 flex flex-col gap-6">
+      <div className="relative z-10 mx-auto max-w-lg px-4 py-10 flex flex-col gap-6">
         <h1 className="font-black text-2xl tracking-tight">Profile</h1>
 
         <ProfileForm

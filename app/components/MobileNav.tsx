@@ -29,36 +29,36 @@ export default function MobileNav({
       <button
         onClick={() => setOpen(o => !o)}
         aria-label={open ? "Close menu" : "Open menu"}
-        className="border-2 border-ink w-9 h-9 flex items-center justify-center font-mono text-base font-black shadow-brutal-sm"
+        className="rounded-full border border-white/15 w-9 h-9 flex items-center justify-center font-mono text-base font-black text-white hover:bg-white/10 transition-colors"
       >
         {open ? "✕" : "≡"}
       </button>
 
       {open && (
-        <div className="fixed top-14 left-0 right-0 bg-surface border-b-2 border-ink z-40">
+        <div className="fixed top-20 left-4 right-4 rounded-2xl glass-panel z-40 overflow-hidden">
           {NAV_LINKS.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
               onClick={() => setOpen(false)}
-              className={`flex items-center px-6 py-4 text-sm font-bold tracking-widest uppercase border-b border-ink-faint transition-colors ${
+              className={`flex items-center px-6 py-4 text-sm font-bold tracking-widest uppercase border-b border-white/10 transition-colors ${
                 activePath === href
-                  ? "bg-ink text-parchment"
-                  : "hover:bg-parchment"
+                  ? "bg-inj text-white"
+                  : "text-white/80 hover:bg-white/5"
               }`}
             >
               {label}
             </Link>
           ))}
 
-          <div className="px-6 py-4 border-b border-ink-faint">
+          <div className="px-6 py-4 border-b border-white/10">
             <WalletLink userId={userId} currentWallet={walletAddress} />
           </div>
 
           <form action="/auth/signout" method="POST" className="px-6 py-4">
             <button
               type="submit"
-              className="text-sm font-bold tracking-widest uppercase text-ink-muted hover:text-ink transition-colors"
+              className="text-sm font-bold tracking-widest uppercase text-white/60 hover:text-white transition-colors"
             >
               Sign out
             </button>

@@ -36,33 +36,33 @@ export default function ProfileForm({ currentUsername, currentCountry, avatarUrl
     <div className="flex flex-col gap-8">
 
       {/* Avatar + stats */}
-      <div className="flex items-center gap-6 border-2 border-ink bg-surface px-6 py-5 shadow-brutal">
+      <div className="flex items-center gap-6 glass rounded-3xl px-6 py-5">
         {avatarUrl ? (
           <Image
             src={avatarUrl}
             alt={currentUsername}
             width={72}
             height={72}
-            className="border-2 border-ink shadow-brutal-sm flex-shrink-0"
+            className="rounded-2xl border border-white/20 flex-shrink-0"
           />
         ) : (
-          <div className="w-18 h-18 border-2 border-ink bg-parchment flex items-center justify-center text-2xl font-black">
+          <div className="w-18 h-18 rounded-2xl border border-white/15 bg-white/5 flex items-center justify-center text-2xl font-black">
             {currentUsername[0]?.toUpperCase()}
           </div>
         )}
         <div>
           <p className="font-black text-xl tracking-tight">{currentUsername}</p>
-          <p className="font-mono text-sm text-ink-muted mt-0.5">{totalPoints.toLocaleString()} pts</p>
-          <p className="font-mono text-[11px] text-ink-faint mt-1 tracking-wide">
+          <p className="font-mono text-sm text-white/60 mt-0.5">{totalPoints.toLocaleString()} pts</p>
+          <p className="font-mono text-[11px] text-white/40 mt-1 tracking-wide">
             Avatar synced from Discord
           </p>
         </div>
       </div>
 
       {/* Edit form */}
-      <div className="border-2 border-ink bg-surface shadow-brutal">
+      <div className="glass rounded-3xl overflow-hidden">
 
-        <div className="border-b-2 border-ink bg-parchment px-4 py-2">
+        <div className="border-b border-white/10 bg-white/5 px-4 py-2.5">
           <span className="font-black text-xs tracking-[0.2em] uppercase">Edit Profile</span>
         </div>
 
@@ -70,7 +70,7 @@ export default function ProfileForm({ currentUsername, currentCountry, avatarUrl
 
           {/* Username */}
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-[11px] tracking-widest uppercase text-ink-muted">
+            <label className="font-mono text-[11px] tracking-widest uppercase text-white/50">
               Display Name
             </label>
             <input
@@ -79,16 +79,16 @@ export default function ProfileForm({ currentUsername, currentCountry, avatarUrl
               onChange={e => { setUsername(e.target.value); setSaved(false); }}
               maxLength={20}
               placeholder="Your display name"
-              className="border-2 border-ink bg-surface px-3 py-2.5 font-semibold text-sm focus:outline-none focus:border-accent shadow-brutal-sm"
+              className="rounded-xl border border-white/15 bg-white/5 text-white px-3 py-2.5 font-semibold text-sm focus:outline-none focus:border-inj focus:ring-2 focus:ring-inj/30"
             />
-            <p className="font-mono text-[10px] text-ink-muted">
+            <p className="font-mono text-[10px] text-white/40">
               3–20 chars · letters, numbers, spaces, - _ .
             </p>
           </div>
 
           {/* Country */}
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-[11px] tracking-widest uppercase text-ink-muted">
+            <label className="font-mono text-[11px] tracking-widest uppercase text-white/50">
               Country
             </label>
             <div className="flex items-center gap-3">
@@ -98,13 +98,13 @@ export default function ProfileForm({ currentUsername, currentCountry, avatarUrl
                   alt={selectedCountry.name}
                   width={28}
                   height={20}
-                  className="border border-ink-faint flex-shrink-0"
+                  className="border border-white/20 rounded-[2px] flex-shrink-0"
                 />
               )}
               <select
                 value={country}
                 onChange={e => { setCountry(e.target.value); setSaved(false); }}
-                className="flex-1 border-2 border-ink bg-surface px-3 py-2.5 font-semibold text-sm focus:outline-none focus:border-accent shadow-brutal-sm appearance-none cursor-pointer"
+                className="flex-1 rounded-xl border border-white/15 bg-white/5 text-white px-3 py-2.5 font-semibold text-sm focus:outline-none focus:border-inj focus:ring-2 focus:ring-inj/30 appearance-none cursor-pointer"
               >
                 <option value="">— Select country —</option>
                 {COUNTRIES.map(c => (
@@ -118,14 +118,14 @@ export default function ProfileForm({ currentUsername, currentCountry, avatarUrl
           <motion.button
             onClick={handleSave}
             disabled={isPending || saved}
-            whileTap={!isPending && !saved ? { x: 2, y: 2, boxShadow: "0px 0px 0px #0D0D0D" } : {}}
-            className="border-2 border-ink bg-ink text-parchment py-3 text-xs font-bold tracking-widest uppercase shadow-brutal-sm transition-colors hover:bg-accent hover:border-accent disabled:bg-ink-faint disabled:border-ink-faint disabled:shadow-none disabled:cursor-not-allowed"
+            whileTap={!isPending && !saved ? { scale: 0.98 } : {}}
+            className="rounded-full bg-inj text-white py-3 text-xs font-bold tracking-widest uppercase transition-colors hover:bg-inj-soft disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isPending ? "Saving…" : saved ? "Saved ✓" : "Save Changes"}
           </motion.button>
 
           {error && (
-            <p className="font-mono text-[11px] text-accent text-center">{error}</p>
+            <p className="font-mono text-[11px] text-red-400 text-center">{error}</p>
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import WalletLink from "@/app/components/WalletLink";
 import MobileNav from "@/app/components/MobileNav";
+import InjectiveMark from "@/app/components/InjectiveMark";
 
 type Props = {
   userId: string;
@@ -17,14 +18,14 @@ export default function NavBar({ userId, walletAddress, activePath, avatarUrl, u
   const links: { href: string; label: string }[] = [];
 
   return (
-    <header className="border-b-2 border-ink bg-surface sticky top-0 z-30">
-      <div className="mx-auto max-w-4xl px-4 h-14 flex items-center justify-between gap-4">
+    <header className="sticky top-4 z-50 px-4">
+      <div className="mx-auto max-w-4xl glass-nav rounded-full h-14 pl-6 pr-3 flex items-center justify-between gap-4">
 
         <Link
           href="/"
-          className="font-black text-sm tracking-[-0.02em] uppercase hover:text-accent transition-colors"
+          className="font-black text-sm tracking-[-0.02em] uppercase hover:text-inj-soft transition-colors"
         >
-          INJ<span className="text-accent">CUP</span>
+          INJ<span className="text-inj-soft">CUP</span>
         </Link>
 
         <MobileNav
@@ -39,10 +40,10 @@ export default function NavBar({ userId, walletAddress, activePath, avatarUrl, u
             <Link
               key={href}
               href={href}
-              className={`border-2 px-3 py-1 text-xs font-bold tracking-wide uppercase transition-[box-shadow,transform,background-color] duration-100 ${
+              className={`rounded-full border px-3 py-1 text-xs font-bold tracking-wide uppercase transition-colors duration-100 ${
                 activePath === href
-                  ? "border-ink bg-ink text-parchment"
-                  : "border-ink shadow-brutal-sm hover:-translate-x-px hover:-translate-y-px hover:shadow-brutal"
+                  ? "border-inj bg-inj text-white"
+                  : "border-white/15 text-white/80 hover:bg-white/10"
               }`}
             >
               {label}
@@ -54,10 +55,10 @@ export default function NavBar({ userId, walletAddress, activePath, avatarUrl, u
           {/* Profile avatar link */}
           <Link
             href="/profile"
-            className={`border-2 flex items-center gap-2 px-2 py-1 transition-[box-shadow,transform,background-color] duration-100 ${
+            className={`rounded-full border h-8 min-w-8 flex items-center justify-center gap-2 px-2 transition-colors duration-100 ${
               activePath === "/profile"
-                ? "border-ink bg-ink"
-                : "border-ink shadow-brutal-sm hover:-translate-x-px hover:-translate-y-px hover:shadow-brutal"
+                ? "border-inj bg-inj"
+                : "border-white/15 hover:bg-white/10"
             }`}
             title="Profile"
           >
@@ -67,10 +68,10 @@ export default function NavBar({ userId, walletAddress, activePath, avatarUrl, u
                 alt={username ?? "Profile"}
                 width={22}
                 height={22}
-                className={activePath === "/profile" ? "brightness-0 invert" : ""}
+                className="rounded-full"
               />
             ) : (
-              <span className={`font-mono text-xs font-bold ${activePath === "/profile" ? "text-parchment" : ""}`}>
+              <span className="font-mono text-xs font-bold text-white">
                 {username?.[0]?.toUpperCase() ?? "P"}
               </span>
             )}
@@ -79,11 +80,15 @@ export default function NavBar({ userId, walletAddress, activePath, avatarUrl, u
           <form action="/auth/signout" method="POST">
             <button
               type="submit"
-              className="border-2 border-ink-faint px-3 py-1 text-xs font-bold tracking-wide uppercase text-ink-muted hover:border-ink hover:text-ink transition-colors duration-100"
+              className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold tracking-wide uppercase text-white/60 hover:bg-white/10 hover:text-white transition-colors duration-100"
             >
               Sign out
             </button>
           </form>
+
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 border border-white/15">
+            <InjectiveMark className="h-4 w-4 text-white" />
+          </span>
         </nav>
 
       </div>

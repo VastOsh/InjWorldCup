@@ -82,7 +82,7 @@ export default function WalletSignIn({ redirectTo = "/market" }: { redirectTo?: 
       <button
         onClick={handleSignIn}
         disabled={busy}
-        className="flex items-center justify-center gap-3 border-2 border-ink bg-ink text-parchment px-6 py-3 font-bold text-sm uppercase tracking-wide shadow-brutal-sm hover:-translate-x-px hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 transition-transform"
+        className="flex items-center justify-center gap-3 rounded-full bg-inj text-white px-6 py-3 font-bold text-sm uppercase tracking-wide shadow-lg shadow-inj/30 hover:bg-inj-soft hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 transition-all"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -92,7 +92,7 @@ export default function WalletSignIn({ redirectTo = "/market" }: { redirectTo?: 
         {label}
       </button>
       {error && (
-        <p className="font-mono text-[11px] text-accent">{error}</p>
+        <p className="font-mono text-[11px] text-red-400">{error}</p>
       )}
     </div>
   );

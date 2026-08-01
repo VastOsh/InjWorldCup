@@ -98,25 +98,25 @@ export default function Cashier({
   }
 
   return (
-    <div className="border-2 border-ink shadow-brutal bg-surface">
+    <div className="glass rounded-3xl overflow-hidden">
       {/* Balance */}
-      <div className="px-4 py-4 border-b-2 border-ink flex items-end justify-between gap-3">
+      <div className="px-4 py-4 border-b border-white/10 flex items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-muted">Balance</p>
-          <p className="font-black text-3xl tabular leading-none mt-1">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-white/50">Balance</p>
+          <p className="font-black text-3xl tabular leading-none mt-1.5">
             {fromAtomic(bal, denom.decimals, 2)}{" "}
-            <span className="text-base font-bold text-ink-muted">{denom.symbol}</span>
+            <span className="text-base font-bold text-white/50">{denom.symbol}</span>
           </p>
         </div>
-        <div className="flex">
+        <div className="flex rounded-full border border-white/15 p-0.5">
           {(["deposit", "withdraw"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => { setTab(t); setNote(null); setLastTx(null); }}
-              className={`border-2 border-ink px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${
-                tab === t ? "bg-ink text-parchment" : "hover:bg-accent-soft"
-              } ${t === "withdraw" ? "border-l-0" : ""}`}
+              className={`px-3.5 py-1 rounded-full font-mono text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                tab === t ? "bg-inj text-white" : "text-white/60 hover:text-white"
+              }`}
             >
               {t}
             </button>
@@ -125,23 +125,23 @@ export default function Cashier({
       </div>
 
       {!walletLinked ? (
-        <p className="px-4 py-3 font-mono text-[11px] text-ink-muted">
+        <p className="px-4 py-3.5 font-mono text-[11px] text-white/50">
           Link an Injective wallet to deposit or withdraw.
         </p>
       ) : tab === "deposit" ? (
-        <div className="px-4 py-3 flex flex-col gap-2">
-          <p className="font-mono text-[11px] text-ink-muted">
+        <div className="px-4 py-3.5 flex flex-col gap-2.5">
+          <p className="font-mono text-[11px] text-white/50 leading-relaxed">
             Send {denom.symbol} to the market wallet, then paste the transaction hash to credit your balance.
           </p>
           {marketWallet && (
             <div className="flex items-stretch gap-2">
-              <code className="flex-1 border-2 border-ink-faint bg-parchment px-2 py-1.5 font-mono text-[11px] break-all">
+              <code className="flex-1 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 font-mono text-[11px] break-all text-white/80">
                 {marketWallet}
               </code>
               <button
                 type="button"
                 onClick={copyAddr}
-                className="shrink-0 border-2 border-ink px-2 font-mono text-[10px] font-bold uppercase tracking-wide hover:bg-ink hover:text-parchment transition-colors"
+                className="shrink-0 rounded-full border border-white/15 px-3 font-mono text-[10px] font-bold uppercase tracking-wide text-white/80 hover:bg-white/10 transition-colors"
               >
                 {copiedAddr ? "Copied" : "Copy"}
               </button>
@@ -152,21 +152,21 @@ export default function Cashier({
               value={txHash}
               onChange={(e) => setTxHash(e.target.value)}
               placeholder="Transaction hash"
-              className="flex-1 border-2 border-ink px-3 py-2 font-mono text-xs focus:outline-none focus:shadow-brutal-sm"
+              className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 font-mono text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-inj focus:ring-2 focus:ring-inj/30 transition-colors"
             />
             <button
               type="button"
               disabled={pending || !txHash.trim()}
               onClick={doDeposit}
-              className="border-2 border-ink bg-accent text-surface px-4 py-2 font-bold text-sm uppercase shadow-brutal-sm hover:-translate-x-px hover:-translate-y-px disabled:opacity-40 transition-transform"
+              className="rounded-full bg-inj text-white px-4 py-2 font-bold text-sm uppercase shadow-lg shadow-inj/30 hover:bg-inj-soft disabled:opacity-40 disabled:hover:bg-inj transition-all"
             >
               {pending ? "…" : "Credit"}
             </button>
           </div>
         </div>
       ) : (
-        <div className="px-4 py-3 flex flex-col gap-2">
-          <p className="font-mono text-[11px] text-ink-muted">
+        <div className="px-4 py-3.5 flex flex-col gap-2.5">
+          <p className="font-mono text-[11px] text-white/50 leading-relaxed">
             Cash out to your linked wallet. Only your verified address can receive.
           </p>
           <div className="flex items-center gap-2">
@@ -175,12 +175,12 @@ export default function Cashier({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder={`Amount (${denom.symbol})`}
-              className="flex-1 border-2 border-ink px-3 py-2 font-mono text-sm focus:outline-none focus:shadow-brutal-sm"
+              className="flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 font-mono text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-inj focus:ring-2 focus:ring-inj/30 transition-colors"
             />
             <button
               type="button"
               onClick={() => setAmount(fromAtomic(bal, denom.decimals))}
-              className="border-2 border-ink px-2 py-2 font-mono text-[10px] font-bold uppercase hover:bg-ink hover:text-parchment transition-colors"
+              className="rounded-full border border-white/15 px-3 py-2 font-mono text-[10px] font-bold uppercase text-white/80 hover:bg-white/10 transition-colors"
             >
               Max
             </button>
@@ -188,7 +188,7 @@ export default function Cashier({
               type="button"
               disabled={pending || !amount.trim()}
               onClick={doWithdraw}
-              className="border-2 border-ink bg-ink text-parchment px-4 py-2 font-bold text-sm uppercase shadow-brutal-sm hover:-translate-x-px hover:-translate-y-px disabled:opacity-40 transition-transform"
+              className="rounded-full border border-white/20 bg-white/10 text-white px-4 py-2 font-bold text-sm uppercase hover:bg-white/15 disabled:opacity-40 transition-colors"
             >
               {pending ? "…" : "Withdraw"}
             </button>
@@ -198,8 +198,8 @@ export default function Cashier({
 
       {note && (
         <p
-          className={`px-4 py-2 border-t-2 border-ink font-mono text-[11px] ${
-            note.kind === "ok" ? "text-open" : "text-accent"
+          className={`px-4 py-2.5 border-t border-white/10 font-mono text-[11px] ${
+            note.kind === "ok" ? "text-open" : "text-red-400"
           }`}
         >
           {note.text}
@@ -207,9 +207,9 @@ export default function Cashier({
       )}
 
       {lastTx && (
-        <div className="px-4 py-2 border-t-2 border-ink flex items-center gap-2">
+        <div className="px-4 py-2.5 border-t border-white/10 flex items-center gap-2">
           <code
-            className="flex-1 font-mono text-[11px] break-all text-ink-muted"
+            className="flex-1 font-mono text-[11px] break-all text-white/50"
             title={lastTx}
           >
             {lastTx.slice(0, 10)}…{lastTx.slice(-8)}
@@ -217,7 +217,7 @@ export default function Cashier({
           <button
             type="button"
             onClick={copyTx}
-            className="border-2 border-ink px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide hover:bg-ink hover:text-parchment transition-colors"
+            className="rounded-full border border-white/15 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wide text-white/80 hover:bg-white/10 transition-colors"
           >
             {copied ? "Copied" : "Copy TX"}
           </button>
@@ -225,7 +225,7 @@ export default function Cashier({
             href={`${explorerTxBase}/${lastTx}`}
             target="_blank"
             rel="noreferrer"
-            className="border-2 border-ink px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide hover:bg-ink hover:text-parchment transition-colors"
+            className="rounded-full border border-white/15 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wide text-white/80 hover:bg-white/10 transition-colors"
           >
             View
           </a>

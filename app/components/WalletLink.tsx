@@ -65,13 +65,13 @@ export default function WalletLink({ userId, currentWallet }: { userId: string; 
 
   if (linked) {
     return (
-      <div className="flex items-center gap-2 border-2 border-open px-2.5 py-1 shadow-brutal-sm">
+      <div className="flex items-center gap-2 rounded-full border border-open/40 bg-open/10 px-2.5 py-1">
         <span className="w-1.5 h-1.5 rounded-full bg-open flex-shrink-0" />
-        <span className="font-mono text-[11px] text-ink">
+        <span className="font-mono text-[11px] text-white/80">
           {linked.slice(0, 8)}…{linked.slice(-4)}
         </span>
         {coaHolder && (
-          <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-accent">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-inj-soft">
             ✦ CoA
           </span>
         )}
@@ -86,11 +86,11 @@ export default function WalletLink({ userId, currentWallet }: { userId: string; 
       <button
         onClick={handleLink}
         disabled={busy}
-        className="border-2 border-ink px-3 py-1 text-xs font-bold tracking-wide uppercase shadow-brutal-sm hover:bg-ink hover:text-parchment transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold tracking-wide uppercase text-white/80 hover:bg-white/10 transition-colors duration-100 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "signing" ? "Signing…" : status === "linking" ? "Verifying…" : "Link Wallet"}
       </button>
-      {error && <p className="font-mono text-[10px] text-accent max-w-[160px] text-right">{error}</p>}
+      {error && <p className="font-mono text-[10px] text-red-400 max-w-[160px] text-right">{error}</p>}
     </div>
   );
 }
