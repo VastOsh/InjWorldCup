@@ -29,6 +29,7 @@ export default function Cashier({
   const [note, setNote] = useState<Note>(null);
   const [lastTx, setLastTx] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedAddr, setCopiedAddr] = useState(false);
 
   const bal = BigInt(balance);
 
@@ -43,6 +44,17 @@ export default function Cashier({
     }
   }
 
+  async function copyAddr() {
+    if (!marketWallet) return;
+    try {
+      await navigator.clipboard.writeText(marketWallet);
+      setCopiedAddr(true);
+      setTimeout(() => setCopiedAddr(false), 1500);
+    } catch {
+      /* clipboard blocked — the address stays visible to select manually */
+    }
+  }
+
   function doDeposit() {
     if (!txHash.trim()) return;
     setNote(null);
@@ -50,12 +62,16 @@ export default function Cashier({
     start(async () => {
       const r = await claimDeposit(txHash.trim());
       if (r.ok) {
-        setNote({
-          kind: "ok",
-          text: r.credited
-            ? `Credited ${fromAtomic(BigInt(r.amount ?? "0"), denom.decimals, 4)} ${denom.symbol}.`
-            : "Already credited.",
-        });
+        // A fresh credit is a success (green); "already credited" is a no-op the
+        // user should notice — show it in red like a warning.
+        setNote(
+          r.credited
+            ? {
+                kind: "ok",
+                text: `Credited ${fromAtomic(BigInt(r.amount ?? "0"), denom.decimals, 4)} ${denom.symbol}.`,
+              }
+            : { kind: "err", text: "Already credited." },
+        );
         setTxHash("");
         router.refresh();
       } else {
@@ -118,9 +134,18 @@ export default function Cashier({
             Send {denom.symbol} to the market wallet, then paste the transaction hash to credit your balance.
           </p>
           {marketWallet && (
-            <code className="block border-2 border-ink-faint bg-parchment px-2 py-1.5 font-mono text-[11px] break-all">
-              {marketWallet}
-            </code>
+            <div className="flex items-stretch gap-2">
+              <code className="flex-1 border-2 border-ink-faint bg-parchment px-2 py-1.5 font-mono text-[11px] break-all">
+                {marketWallet}
+              </code>
+              <button
+                type="button"
+                onClick={copyAddr}
+                className="shrink-0 border-2 border-ink px-2 font-mono text-[10px] font-bold uppercase tracking-wide hover:bg-ink hover:text-parchment transition-colors"
+              >
+                {copiedAddr ? "Copied" : "Copy"}
+              </button>
+            </div>
           )}
           <div className="flex items-center gap-2">
             <input

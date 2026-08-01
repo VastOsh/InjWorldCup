@@ -1,7 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { BETA_COOKIE, betaCookieValid } from "@/lib/beta";
 
 export async function proxy(request: NextRequest) {
+  // Closed-beta gate: only the public landing page ("/") is open; everything
+  // else needs a redeemed invite cookie. Static assets are already excluded by
+  // the matcher below. Constant token compare — no crypto, runtime-agnostic.
+  const isLanding = request.nextUrl.pathname === "/";
+  if (!isLanding && !betaCookieValid(request.cookies.get(BETA_COOKIE)?.value)) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

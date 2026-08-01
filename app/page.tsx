@@ -1,209 +1,110 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import Image from "next/image";
-import NavBar from "@/app/components/NavBar";
-import ChampionBanner from "@/app/components/ChampionBanner";
-import TiebreakerInput from "@/app/components/TiebreakerInput";
-import MatchGrid from "@/app/components/MatchGrid";
-import GroupAccordion from "@/app/components/GroupAccordion";
-import RoundAccordion from "@/app/components/RoundAccordion";
-import { KNOCKOUT_ROUNDS } from "@/lib/rounds";
-import { COUNTRIES, flagUrlByCode } from "@/lib/countries";
-import {
-  getTopStandings,
-  getStandingByUserId,
-  isEventFinished,
-  totalPlayerCount,
-} from "@/lib/podium";
-import type { Database } from "@/lib/supabase/types";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import BetaGate from "@/app/components/BetaGate";
+import { BETA_COOKIE, betaCookieValid } from "@/lib/beta";
 
-type Match = Database["public"]["Tables"]["matches"]["Row"];
-type Prediction = Database["public"]["Tables"]["predictions"]["Row"];
+export default async function Landing() {
+  const jar = await cookies();
+  const hasAccess = betaCookieValid(jar.get(BETA_COOKIE)?.value);
 
-export default async function HomePage() {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username, avatar_url, total_points, wallet_address, tie_breaker_answer, country")
-    .eq("id", user.id)
-    .single();
-
-  const [
-    { data: matches },
-    { data: predictions },
-    { data: tbConfig },
-    { count: aboveCount },
-  ] = await Promise.all([
-    supabase.from("matches").select("*").eq("visible", true).order("match_date", { ascending: true }),
-    supabase.from("predictions").select("*").eq("user_id", user.id),
-    supabase.from("app_config").select("value_int").eq("key", "tiebreaker_visible").maybeSingle(),
-    supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true })
-      .gt("total_points", profile?.total_points ?? 0),
-  ]);
-
-  const userRank = (aboveCount ?? 0) + 1;
-
-  // Podium banner data. Only fetched once the event is flagged finished, so the
-  // homepage costs no extra queries during a live tournament.
-  const eventFinished = await isEventFinished();
-  const [topStandings, myStanding, playerCount] = eventFinished
-    ? await Promise.all([getTopStandings(3), getStandingByUserId(user.id), totalPlayerCount()])
-    : [[], null, 0];
-
-  const predByMatchId = Object.fromEntries((predictions ?? []).map((p) => [p.match_id, p]));
-  const tiebreakerVisible = (tbConfig?.value_int ?? 0) === 1;
-
-  // Compute locked state server-side — Node.js parses dates reliably.
-  const now = Date.now();
-  const lockedIds = (matches ?? [])
-    .filter(m => m.status === "FINISHED" || new Date(m.match_date).getTime() <= now)
-    .map(m => m.id);
-
-  // Split into group-stage sections (sorted A–L) + ungrouped (friendlies/knockout)
-  const groupMap = new Map<string, Match[]>();
-  const ungrouped: Match[] = [];
-
-  for (const match of matches ?? []) {
-    if (match.group_name) {
-      if (!groupMap.has(match.group_name)) groupMap.set(match.group_name, []);
-      groupMap.get(match.group_name)!.push(match);
-    } else {
-      ungrouped.push(match);
-    }
-  }
-
-  const groupEntries = [...groupMap.entries()].sort(([a], [b]) => a.localeCompare(b));
-
-  // Knockout matches split by round (rendered in tournament order); anything
-  // without a round falls back to a generic "Other Matches" section.
-  const roundMap = new Map<string, Match[]>();
-  const otherMatches: Match[] = [];
-  for (const match of ungrouped) {
-    if (match.round) {
-      if (!roundMap.has(match.round)) roundMap.set(match.round, []);
-      roundMap.get(match.round)!.push(match);
-    } else {
-      otherMatches.push(match);
-    }
-  }
-  // Reverse tournament order so the most advanced (next-to-play) round sits on
-  // top — e.g. Round of 16 above Round of 32 once the R16 draw is known.
-  const roundSections = KNOCKOUT_ROUNDS
-    .filter((r) => roundMap.has(r.code))
-    .map((r) => ({ label: r.label, matches: roundMap.get(r.code)! }))
-    .reverse();
+  const steps = [
+    {
+      n: "01",
+      title: "Connect & deposit",
+      body: "Sign in with your Injective wallet and deposit USDC into your balance.",
+    },
+    {
+      n: "02",
+      title: "Back an outcome",
+      body: "Stake on the result you believe in. The odds move with the crowd.",
+    },
+    {
+      n: "03",
+      title: "Winners split the pot",
+      body: "When the event settles, the pool is shared pro-rata — minus a small fee. Cash out anytime.",
+    },
+  ];
 
   return (
-    <main className="min-h-screen bg-parchment">
+    <main className="min-h-full flex flex-col">
+      {/* Top bar */}
+      <header className="border-b-2 border-ink">
+        <div className="mx-auto max-w-5xl px-4 h-14 flex items-center justify-between">
+          <span className="font-black text-sm tracking-[-0.02em] uppercase">
+            INJ<span className="text-accent">CUP</span>
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+            on Injective
+          </span>
+        </div>
+      </header>
 
-      <NavBar userId={user.id} walletAddress={profile?.wallet_address ?? null} activePath="/" avatarUrl={profile?.avatar_url} username={profile?.username} />
-
-      <div className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-10">
-
-        {/* ── Champion banner (tournament over) ─────────────────────────── */}
-        {eventFinished && (
-          <ChampionBanner
-            top={topStandings}
-            myStanding={myStanding}
-            playerCount={playerCount}
-          />
-        )}
-
-        {/* ── Profile card ─────────────────────────────────────────────── */}
-        <div className="flex items-center gap-5 border-2 border-ink bg-surface px-6 py-5 shadow-brutal">
-          {profile?.avatar_url && (
-            <Image
-              src={profile.avatar_url}
-              alt={profile?.username ?? ""}
-              width={56}
-              height={56}
-              priority
-              className="border-2 border-ink shadow-brutal-sm flex-shrink-0"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-black text-lg tracking-tight truncate">{profile?.username}</p>
-              {profile?.country && (() => {
-                const c = COUNTRIES.find(x => x.name === profile.country);
-                return c ? (
-                  <Image
-                    src={flagUrlByCode(c.code)}
-                    alt={c.name}
-                    width={20}
-                    height={14}
-                    className="border border-ink-faint flex-shrink-0"
-                    title={c.name}
-                  />
-                ) : null;
-              })()}
-              <span className="font-mono font-black text-lg text-ink-muted">#{userRank}</span>
-            </div>
-            <p className="font-mono text-sm text-ink-muted tabular">
-              {(profile?.total_points ?? 0).toLocaleString()} pts
-            </p>
-          </div>
-          {tiebreakerVisible && (
-            <div className="border-l-2 border-ink-faint pl-5">
-              <TiebreakerInput current={profile?.tie_breaker_answer ?? null} />
-            </div>
-          )}
+      {/* Hero */}
+      <section className="mx-auto max-w-5xl w-full px-4 py-14 sm:py-20 grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+            Parimutuel prediction markets
+          </p>
+          <h1 className="mt-3 font-black text-4xl sm:text-5xl lg:text-6xl leading-[0.95] tracking-[-0.02em] text-balance">
+            Back what you believe.
+            <br />
+            <span className="text-accent">Split the pot.</span>
+          </h1>
+          <p className="mt-5 max-w-md text-ink-muted text-base leading-relaxed">
+            Deposit USDC, stake on an outcome, and share the pool with everyone who called it
+            right. Custodial balances, on-chain payouts, settled on Injective.
+          </p>
         </div>
 
-        {/* ── No matches at all ─────────────────────────────────────────── */}
-        {!matches?.length && (
-          <p className="font-mono text-sm text-ink-muted border-2 border-ink-faint px-4 py-6 text-center">
-            No matches scheduled yet.
-          </p>
-        )}
-
-        {/* ── Knockout rounds (collapsible, kept on top for quick access) ── */}
-        {roundSections.length > 0 && (
-          <RoundAccordion
-            rounds={roundSections}
-            predByMatchId={predByMatchId as Record<number, Prediction>}
-            lockedIds={lockedIds}
-          />
-        )}
-
-        {/* ── Group-stage sections (collapsible) ────────────────────────── */}
-        {groupEntries.length > 0 && (
-          <GroupAccordion
-            groups={groupEntries.map(([groupName, groupMatches]) => ({
-              groupName,
-              matches: groupMatches,
-            }))}
-            predByMatchId={predByMatchId as Record<number, Prediction>}
-            lockedIds={lockedIds}
-          />
-        )}
-
-        {/* ── Anything still unclassified (friendlies / no round) ────────── */}
-        {otherMatches.length > 0 && (
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="border-2 border-ink px-3 py-1">
-                <span className="font-black text-xs tracking-[0.2em] uppercase text-ink">
-                  Other Matches
-                </span>
-              </div>
-              <div className="flex-1 h-px bg-ink-faint" />
+        <div className="lg:justify-self-end w-full max-w-sm">
+          {hasAccess ? (
+            <div className="border-2 border-ink shadow-brutal-lg bg-surface p-6">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-open">
+                Access granted
+              </p>
+              <h2 className="font-black text-xl mt-1">You&apos;re on the list</h2>
+              <Link
+                href="/market"
+                className="mt-4 inline-block border-2 border-ink bg-ink text-parchment px-5 py-2.5 font-bold text-sm uppercase tracking-wide shadow-brutal-sm hover:-translate-x-px hover:-translate-y-px transition-transform"
+              >
+                Enter app →
+              </Link>
             </div>
-            <MatchGrid
-              matches={otherMatches}
-              predByMatchId={predByMatchId as Record<number, Prediction>}
-              lockedIds={lockedIds}
-            />
-          </section>
-        )}
+          ) : (
+            <BetaGate />
+          )}
+        </div>
+      </section>
 
-      </div>
+      {/* How it works */}
+      <section className="border-t-2 border-ink bg-surface">
+        <div className="mx-auto max-w-5xl w-full px-4 py-12">
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-ink-muted">
+            How it works
+          </p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            {steps.map((s) => (
+              <div key={s.n} className="border-2 border-ink p-5 shadow-brutal-sm bg-parchment">
+                <p className="font-mono text-2xl font-black text-accent tabular">{s.n}</p>
+                <h3 className="mt-2 font-black text-lg leading-tight">{s.title}</h3>
+                <p className="mt-1.5 text-sm text-ink-muted leading-relaxed">{s.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t-2 border-ink mt-auto">
+        <div className="mx-auto max-w-5xl w-full px-4 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+            injcup — closed beta
+          </span>
+          <span className="font-mono text-[10px] text-ink-muted">
+            Predictions involve risk. Only stake what you can afford to lose.
+          </span>
+        </div>
+      </footer>
     </main>
   );
 }

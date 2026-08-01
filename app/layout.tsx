@@ -8,8 +8,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "InjWorldCup — Predict & Earn",
-  description: "World Cup score prediction game on Injective",
+  title: "injcup — Prediction Markets on Injective",
+  description: "Parimutuel prediction markets on Injective.",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

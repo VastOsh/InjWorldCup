@@ -402,6 +402,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      beta_invites: {
+        Row: {
+          code: string;
+          label: string | null;
+          redeemed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          code: string;
+          label?: string | null;
+          redeemed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          label?: string | null;
+          redeemed_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       group_standings: {

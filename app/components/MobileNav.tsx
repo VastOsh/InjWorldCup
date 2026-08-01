@@ -4,10 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import WalletLink from "@/app/components/WalletLink";
 
+// World-Cup tabs retired (injcup is a prediction market now); keep Profile.
 const NAV_LINKS = [
-  { href: "/groups",      label: "Groups" },
-  { href: "/knockout",    label: "Knockout" },
-  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/profile",     label: "Profile" },
 ] as const;
 

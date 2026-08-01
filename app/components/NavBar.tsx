@@ -12,11 +12,9 @@ type Props = {
 };
 
 export default function NavBar({ userId, walletAddress, activePath, avatarUrl, username }: Props) {
-  const links = [
-    { href: "/groups",    label: "Groups" },
-    { href: "/knockout",  label: "Knockout" },
-    { href: "/leaderboard", label: "Leaderboard" },
-  ] as const;
+  // World-Cup tabs (Groups / Knockout / Leaderboard) are retired — injcup is a
+  // prediction market now. Pages still exist but are unlinked.
+  const links: { href: string; label: string }[] = [];
 
   return (
     <header className="border-b-2 border-ink bg-surface sticky top-0 z-30">
@@ -26,7 +24,7 @@ export default function NavBar({ userId, walletAddress, activePath, avatarUrl, u
           href="/"
           className="font-black text-sm tracking-[-0.02em] uppercase hover:text-accent transition-colors"
         >
-          INJ<span className="text-accent">WC</span>
+          INJ<span className="text-accent">CUP</span>
         </Link>
 
         <MobileNav
