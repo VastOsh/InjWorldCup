@@ -205,6 +205,8 @@ export const COUNTRIES: Country[] = [
   { name: "Zimbabwe", code: "zw" },
 ];
 
-export function flagUrlByCode(code: string): string {
-  return `https://flagcdn.com/w40/${code}.png`;
+// width is a flagcdn size bucket (w20/w40/w80/w160/w320…). Default 40 keeps
+// existing callers unchanged; pass a larger bucket for crisp large chips.
+export function flagUrlByCode(code: string, width: number = 40): string {
+  return `https://flagcdn.com/w${width}/${code}.png`;
 }

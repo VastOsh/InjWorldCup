@@ -18,7 +18,7 @@ const ZERO = BigInt(0);
 const FLAG_CODE_BY_NAME = new Map(COUNTRIES.map((c) => [c.name, c.code] as const));
 function flagFor(team: string): string | null {
   const code = FLAG_CODE_BY_NAME.get(team);
-  return code ? flagUrlByCode(code) : null;
+  return code ? flagUrlByCode(code, 160) : null; // hi-res for the 44px chip
 }
 function poolsOf(m: MarketVM): Record<MarketOutcome, bigint> {
   return { home: BigInt(m.pools.home), draw: BigInt(m.pools.draw), away: BigInt(m.pools.away) };
@@ -44,17 +44,15 @@ const Target = (p: { className?: string }) => (
 const Star = (p: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={p.className} {...I}><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z" /></svg>
 );
-const Handshake = (p: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className} {...I}><path d="M8 11l2.5 2.5a1.4 1.4 0 002 0L20 7M2 9l4-3 5 3M22 9l-4-3-3 2M8 11l-2 2m0 0l-2 2m2-2l2 2m8-2l2 2m0 0l2 2m-2-2l-2 2" /></svg>
-);
 
 function OutcomeIcon({ flag, isDraw }: { flag: string | null; isDraw: boolean }) {
   return (
     <span className="shrink-0 w-11 h-11 rounded-xl overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center">
       {flag ? (
-        <Image src={flag} alt="" width={44} height={44} className="w-full h-full object-cover" />
+        <Image src={flag} alt="" width={88} height={88} className="w-full h-full object-cover" />
       ) : isDraw ? (
-        <Handshake className="w-5 h-5 text-white/50" />
+        // eslint-disable-next-line @next/next/no-img-element -- SVG asset, next/image blocks SVG by default
+        <img src="/draw.svg" alt="Draw" className="w-8 h-8 object-contain" />
       ) : (
         <span className="w-4 h-4 rounded-full bg-white/15" />
       )}
@@ -139,7 +137,7 @@ export default function MarketCard({
   const statusDot = settled ? "bg-white/40" : locked ? "bg-live" : "bg-open";
 
   return (
-    <div className="glass rounded-3xl p-5 flex flex-col gap-5">
+    <div className="glass-card rounded-3xl p-5 flex flex-col gap-5">
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -177,20 +175,21 @@ export default function MarketCard({
           const isFav = hasAction && o === favorite && !settled;
           const pct = Math.round(prob[o] * 100);
           const backers = market.stakeCounts[o];
-          const glow = isWinner
-            ? "border-open/70 bg-open/[0.08] shadow-[0_0_24px_-6px_rgba(22,163,74,0.6)]"
-            : isFav
-              ? "border-inj/70 bg-inj/[0.10] shadow-[0_0_26px_-6px_rgba(110,95,255,0.6)]"
-              : isPick
-                ? "border-inj/60 bg-inj/[0.06]"
-                : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]";
+          // Selection (your bet target) gets a subtle indigo border; the winner a
+          // subtle green one. "Most backed" is conveyed by the badge alone — no
+          // line highlight.
+          const rowCls = isWinner
+            ? "border-open/40 bg-open/[0.05]"
+            : isPick
+              ? "border-inj/50 bg-white/[0.04]"
+              : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]";
           return (
             <button
               key={o}
               type="button"
               disabled={locked}
               onClick={() => setPick(o)}
-              className={`text-left rounded-2xl border px-4 py-3.5 transition-colors ${locked ? "cursor-default" : "cursor-pointer"} ${glow}`}
+              className={`text-left rounded-2xl border px-4 py-3.5 transition-colors ${locked ? "cursor-default" : "cursor-pointer"} ${rowCls}`}
             >
               <div className="flex items-center gap-3">
                 <OutcomeIcon flag={flagByOutcome[o]} isDraw={o === "draw"} />
@@ -208,7 +207,7 @@ export default function MarketCard({
                   {/* probability bar */}
                   <div className="mt-2 h-1.5 w-[70%] max-w-[240px] rounded-full bg-white/10 overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${isWinner ? "bg-open" : isFav ? "bg-inj-soft shadow-[0_0_10px_rgba(110,95,255,0.8)]" : "bg-inj"}`}
+                      className={`h-full rounded-full ${isWinner ? "bg-open" : "bg-inj"}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
