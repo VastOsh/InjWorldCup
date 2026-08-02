@@ -44,6 +44,23 @@ const Target = (p: { className?: string }) => (
 const Star = (p: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={p.className} {...I}><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z" /></svg>
 );
+const Handshake = (p: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className} {...I}>
+    <path d="m11 17 2 2a1 1 0 1 0 3-3" />
+    <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" />
+    <path d="m21 3 1 11h-2" />
+    <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" />
+    <path d="M3 4h8" />
+  </svg>
+);
+// USDC coin mark (blue circle, white $ + arcs) — its own colours, not currentColor.
+const UsdcIcon = (p: { className?: string }) => (
+  <svg viewBox="0 0 32 32" className={p.className} {...I}>
+    <circle cx="16" cy="16" r="16" fill="#2775CA" />
+    <path fill="#fff" d="M20.5 18.8c0-2.35-1.4-3.16-4.2-3.5-2-.27-2.4-.8-2.4-1.72 0-.92.66-1.5 1.98-1.5 1.19 0 1.85.4 2.17 1.4.06.18.24.3.42.3h.95c.24 0 .42-.18.42-.42v-.06c-.3-1.4-1.42-2.48-2.86-2.62V9.2c0-.24-.18-.42-.48-.48h-.89c-.24 0-.42.18-.48.48v1.2c-2 .27-3.27 1.6-3.27 3.28 0 2.23 1.36 3.1 4.16 3.44 1.87.3 2.47.72 2.47 1.75 0 1.03-.9 1.75-2.11 1.75-1.66 0-2.23-.72-2.42-1.7-.06-.24-.24-.36-.42-.36h-1.01c-.24 0-.42.18-.42.42v.06c.3 1.57 1.3 2.7 3.51 3.01v1.2c0 .24.18.42.48.48h.89c.24 0 .42-.18.48-.48v-1.2c2-.3 3.33-1.7 3.33-3.46z" />
+    <path fill="#fff" d="M12.7 24.55c-3.27-1.2-5.4-4.35-5.4-7.85s2.13-6.65 5.4-7.85c.3-.12.42-.3.42-.6v-.83c0-.24-.12-.42-.42-.48-.06 0-.18 0-.24.06C8.4 8.15 5.7 11.85 5.7 16.7s2.7 8.55 6.76 9.86c.3.12.54 0 .54-.3v-.83c0-.18-.12-.42-.3-.48zm6.6-17.75c-.3-.12-.54 0-.54.3v.83c0 .24.12.42.3.54 3.27 1.2 5.4 4.35 5.4 7.85s-2.13 6.65-5.4 7.85c-.3.12-.42.3-.42.6v.83c0 .24.12.42.42.48.06 0 .18 0 .24-.06 4.06-1.3 6.76-5 6.76-9.85s-2.7-8.56-6.76-9.87z" />
+  </svg>
+);
 
 function OutcomeIcon({ flag, isDraw }: { flag: string | null; isDraw: boolean }) {
   return (
@@ -51,8 +68,7 @@ function OutcomeIcon({ flag, isDraw }: { flag: string | null; isDraw: boolean })
       {flag ? (
         <Image src={flag} alt="" width={88} height={88} className="w-full h-full object-cover" />
       ) : isDraw ? (
-        // eslint-disable-next-line @next/next/no-img-element -- SVG asset, next/image blocks SVG by default
-        <img src="/draw.svg" alt="Draw" className="w-8 h-8 object-contain" />
+        <Handshake className="w-6 h-6 text-white/55" />
       ) : (
         <span className="w-4 h-4 rounded-full bg-white/15" />
       )}
@@ -246,7 +262,7 @@ export default function MarketCard({
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-widest text-white/40">Amount ({denom.symbol})</p>
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 pl-2 pr-1.5 py-1.5">
-                <span className="shrink-0 h-6 w-6 rounded-full bg-inj/20 border border-inj/40 flex items-center justify-center font-bold text-[11px] text-inj-soft">$</span>
+                <UsdcIcon className="shrink-0 h-7 w-7" />
                 <input
                   inputMode="decimal"
                   value={amount}
