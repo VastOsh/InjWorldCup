@@ -175,21 +175,16 @@ export default function MarketCard({
           const isFav = hasAction && o === favorite && !settled;
           const pct = Math.round(prob[o] * 100);
           const backers = market.stakeCounts[o];
-          // Selection (your bet target) gets a subtle indigo border; the winner a
-          // subtle green one. "Most backed" is conveyed by the badge alone — no
-          // line highlight.
-          const rowCls = isWinner
-            ? "border-open/40 bg-open/[0.05]"
-            : isPick
-              ? "border-inj/50 bg-white/[0.04]"
-              : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]";
+          // Raised glass layer for every row; selection gets a subtle indigo
+          // border, the winner a green one. "Most backed" = badge only.
+          const rowBorder = isWinner ? "border-open/45" : isPick ? "border-inj/55" : "border-white/12";
           return (
             <button
               key={o}
               type="button"
               disabled={locked}
               onClick={() => setPick(o)}
-              className={`text-left rounded-2xl border px-4 py-3.5 transition-colors ${locked ? "cursor-default" : "cursor-pointer"} ${rowCls}`}
+              className={`glass-raise text-left rounded-2xl border px-4 py-3.5 transition-[filter] ${locked ? "cursor-default" : "cursor-pointer hover:brightness-125"} ${rowBorder}`}
             >
               <div className="flex items-center gap-3">
                 <OutcomeIcon flag={flagByOutcome[o]} isDraw={o === "draw"} />
@@ -226,7 +221,7 @@ export default function MarketCard({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 rounded-2xl border border-white/10 bg-white/[0.03] divide-x divide-white/10">
+      <div className="glass-raise grid grid-cols-3 rounded-2xl border border-white/10 divide-x divide-white/10">
         <Stat icon={<Bars className="w-4 h-4" />} value={`${fromAtomic(totalPool, denom.decimals, 0)} ${denom.symbol}`} label="Volume" />
         <Stat icon={<Ticket className="w-4 h-4" />} value={totalBets.toLocaleString()} label="Total bets" />
         <Stat icon={<Drop className="w-4 h-4" />} value={`${(fee / 100).toFixed(fee % 100 === 0 ? 0 : 1)}%`} label="Fee" />
@@ -234,7 +229,7 @@ export default function MarketCard({
 
       {/* Bet slip / CTA */}
       {settled ? null : locked ? (
-        <p className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-[11px] text-white/50 text-center">
+        <p className="glass-raise rounded-2xl border border-white/10 px-4 py-3 font-mono text-[11px] text-white/50 text-center">
           Betting is closed — awaiting the result.
         </p>
       ) : !connected ? (
@@ -247,7 +242,7 @@ export default function MarketCard({
         </button>
       ) : (
         <>
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <div className="glass-raise grid grid-cols-[1fr_auto_1fr] gap-4 items-center rounded-2xl border border-white/10 p-4">
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-widest text-white/40">Amount ({denom.symbol})</p>
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 pl-2 pr-1.5 py-1.5">
@@ -289,7 +284,7 @@ export default function MarketCard({
             type="button"
             disabled={pending || !amount.trim() || !!amountErr}
             onClick={submit}
-            className="group relative flex items-center justify-center gap-2 rounded-2xl bg-inj text-white px-5 py-4 font-black text-base uppercase tracking-wide shadow-[0_0_30px_-4px_rgba(77,61,255,0.7)] hover:bg-inj-soft hover:shadow-[0_0_36px_-2px_rgba(110,95,255,0.85)] disabled:opacity-40 disabled:shadow-none transition-all"
+            className="group relative flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-inj-soft to-inj text-white px-5 py-4 font-black text-base uppercase tracking-wide shadow-[0_14px_36px_-8px_rgba(77,61,255,0.75),0_0_28px_-4px_rgba(110,95,255,0.55),inset_0_1px_0_rgba(255,255,255,0.35)] hover:brightness-110 hover:shadow-[0_18px_44px_-8px_rgba(110,95,255,0.9),0_0_36px_-2px_rgba(110,95,255,0.7),inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-40 disabled:shadow-none transition-all"
           >
             <span className="absolute left-4 h-8 w-8 rounded-full bg-white/15 border border-white/20 flex items-center justify-center">
               <Target className="w-4 h-4" />

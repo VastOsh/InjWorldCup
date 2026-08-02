@@ -131,17 +131,20 @@ body {
   -webkit-backdrop-filter: blur(16px) saturate(1.5);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
-/* Hero card — richer, glossier glass with a top-right specular sheen. */
+/* Hero card — real "Liquid Glass": translucent gradient body, a double edge
+   (light outer border + dark inner ring), a bright top reflection, and an inner
+   depth shadow so the surface reads as thick glass rather than a flat panel. */
 .glass-card {
   position: relative;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.02));
-  backdrop-filter: blur(26px) saturate(1.7);
-  -webkit-backdrop-filter: blur(26px) saturate(1.7);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(158deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02) 46%, rgba(255, 255, 255, 0.012));
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.18);          /* light OUTER edge */
   box-shadow:
-    0 24px 70px -24px rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    0 30px 80px -28px rgba(0, 0, 0, 0.70),               /* drop — card floats */
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),             /* bright top reflection edge */
+    inset 0 0 0 1px rgba(0, 0, 0, 0.32),                 /* dark INNER edge (double outline) */
+    inset 0 -40px 70px -42px rgba(0, 0, 0, 0.55);        /* inner depth shadow */
 }
 .glass-card::before {
   content: "";
@@ -151,8 +154,17 @@ body {
   pointer-events: none;
   z-index: -1;
   background:
-    radial-gradient(130% 90% at 88% -12%, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0) 55%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 22%);
+    radial-gradient(120% 80% at 82% -18%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 46%), /* top-right specular */
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 16%);               /* top reflection band */
+}
+
+/* A raised inner layer (options, stats, bet slip) — sits above the card base
+   with its own translucent gradient, top highlight, and float shadow. */
+.glass-raise {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.018));
+  box-shadow:
+    0 8px 18px -10px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 @media (prefers-reduced-motion: reduce) {
