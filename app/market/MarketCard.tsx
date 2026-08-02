@@ -44,15 +44,6 @@ const Target = (p: { className?: string }) => (
 const Star = (p: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={p.className} {...I}><path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01z" /></svg>
 );
-const Handshake = (p: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className} {...I}>
-    <path d="m11 17 2 2a1 1 0 1 0 3-3" />
-    <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" />
-    <path d="m21 3 1 11h-2" />
-    <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" />
-    <path d="M3 4h8" />
-  </svg>
-);
 // USDC coin mark (blue circle, white $ + arcs) — its own colours, not currentColor.
 const UsdcIcon = (p: { className?: string }) => (
   <svg viewBox="0 0 32 32" className={p.className} {...I}>
@@ -68,7 +59,7 @@ function OutcomeIcon({ flag, isDraw }: { flag: string | null; isDraw: boolean })
       {flag ? (
         <Image src={flag} alt="" width={88} height={88} className="w-full h-full object-cover" />
       ) : isDraw ? (
-        <Handshake className="w-6 h-6 text-white/55" />
+        <Image src="/draw.png" alt="Draw" width={1280} height={512} className="w-full h-full object-cover" />
       ) : (
         <span className="w-4 h-4 rounded-full bg-white/15" />
       )}
